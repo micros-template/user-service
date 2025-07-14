@@ -11,5 +11,7 @@ make pre-commit-preparation
 ## Setup env
 
 ```bash
-go env -w GONOSUMDB="10.1.20.130/dropping/event-bus-client,10.1.20.130/dropping/sharedlib,10.1.20.130/dropping/proto-file,10.1.20.130/dropping/proto-user"
+go env -w GOPRIVATE="10.1.20.130/*"
+go env -w GOINSECURE="10.1.20.130/*"
+git config --global url."10.1.20.130".insteadOf https://10.1.20.130/
 ```
