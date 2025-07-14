@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
+	"10.1.20.130/dropping/user-service/internal/domain/repository"
 	"github.com/dropboks/event-bus-client/pkg/event"
 	"github.com/dropboks/proto-user/pkg/upb"
 	"github.com/dropboks/sharedlib/model"
 	"github.com/dropboks/sharedlib/utils"
-	"github.com/dropboks/user-service/internal/domain/repository"
 	"github.com/rs/zerolog"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dropboks/user-service/internal/domain/repository"
-	"github.com/dropboks/user-service/test/mocks"
+	"10.1.20.130/dropping/user-service/internal/domain/repository"
+	"10.1.20.130/dropping/user-service/test/mocks"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"

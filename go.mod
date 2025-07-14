@@ -1,4 +1,4 @@
-module github.com/dropboks/user-service
+module 10.1.20.130/dropping/user-service
 
 go 1.24.2
 

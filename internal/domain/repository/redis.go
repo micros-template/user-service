@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/dropboks/user-service/internal/domain/dto"
-	"github.com/dropboks/user-service/internal/infrastructure/cache"
+	"10.1.20.130/dropping/user-service/internal/domain/dto"
+	"10.1.20.130/dropping/user-service/internal/infrastructure/cache"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 )

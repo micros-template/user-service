@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"10.1.20.130/dropping/user-service/internal/domain/dto"
+	"10.1.20.130/dropping/user-service/internal/domain/repository"
 	"github.com/dropboks/sharedlib/model"
-	"github.com/dropboks/user-service/internal/domain/dto"
-	"github.com/dropboks/user-service/internal/domain/repository"
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/rs/zerolog"

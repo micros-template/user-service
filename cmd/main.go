@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/dropboks/user-service/cmd/bootstrap"
-	"github.com/dropboks/user-service/cmd/server"
+	"10.1.20.130/dropping/user-service/cmd/bootstrap"
+	"10.1.20.130/dropping/user-service/cmd/server"
 	"github.com/spf13/viper"
 )
 

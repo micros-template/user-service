@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"10.1.20.130/dropping/user-service/test/helper"
 	"github.com/dropboks/proto-user/pkg/upb"
 	_helper "github.com/dropboks/sharedlib/test/helper"
-	"github.com/dropboks/user-service/test/helper"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"

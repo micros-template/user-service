@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"10.1.20.130/dropping/user-service/internal/domain/service"
+	"10.1.20.130/dropping/user-service/test/mocks"
 	"github.com/dropboks/proto-user/pkg/upb"
-	"github.com/dropboks/user-service/internal/domain/service"
-	"github.com/dropboks/user-service/test/mocks"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"

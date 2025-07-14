@@ -5,9 +5,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dropboks/user-service/internal/domain/dto"
-	"github.com/dropboks/user-service/internal/domain/handler"
-	"github.com/dropboks/user-service/test/mocks"
+	"10.1.20.130/dropping/user-service/internal/domain/dto"
+	"10.1.20.130/dropping/user-service/internal/domain/handler"
+	"10.1.20.130/dropping/user-service/test/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/suite"

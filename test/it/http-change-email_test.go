@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"10.1.20.130/dropping/user-service/internal/domain/dto"
+	"10.1.20.130/dropping/user-service/test/helper"
 	_helper "github.com/dropboks/sharedlib/test/helper"
 	"github.com/dropboks/sharedlib/utils"
-	"github.com/dropboks/user-service/internal/domain/dto"
-	"github.com/dropboks/user-service/test/helper"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"

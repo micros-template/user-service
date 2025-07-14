@@ -1,8 +1,8 @@
 package bootstrap
 
 import (
-	"github.com/dropboks/user-service/cmd/di"
-	"github.com/dropboks/user-service/config/env"
+	"10.1.20.130/dropping/user-service/cmd/di"
+	"10.1.20.130/dropping/user-service/config/env"
 	"go.uber.org/dig"
 )
 

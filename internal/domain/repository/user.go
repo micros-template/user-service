@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"10.1.20.130/dropping/user-service/internal/domain/dto"
+	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/dropboks/sharedlib/model"
-	"github.com/dropboks/user-service/internal/domain/dto"
-	_db "github.com/dropboks/user-service/internal/infrastructure/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
 )

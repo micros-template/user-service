@@ -1,19 +1,19 @@
 package di
 
 import (
+	"10.1.20.130/dropping/user-service/config/cache"
+	db "10.1.20.130/dropping/user-service/config/database"
+	"10.1.20.130/dropping/user-service/config/logger"
+	mq "10.1.20.130/dropping/user-service/config/message-queue"
+	"10.1.20.130/dropping/user-service/config/router"
+	"10.1.20.130/dropping/user-service/internal/domain/handler"
+	"10.1.20.130/dropping/user-service/internal/domain/repository"
+	"10.1.20.130/dropping/user-service/internal/domain/service"
+	_cache "10.1.20.130/dropping/user-service/internal/infrastructure/cache"
+	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
+	"10.1.20.130/dropping/user-service/internal/infrastructure/grpc"
+	_mq "10.1.20.130/dropping/user-service/internal/infrastructure/message-queue"
 	"github.com/dropboks/event-bus-client/pkg/event"
-	"github.com/dropboks/user-service/config/cache"
-	db "github.com/dropboks/user-service/config/database"
-	"github.com/dropboks/user-service/config/logger"
-	mq "github.com/dropboks/user-service/config/message-queue"
-	"github.com/dropboks/user-service/config/router"
-	"github.com/dropboks/user-service/internal/domain/handler"
-	"github.com/dropboks/user-service/internal/domain/repository"
-	"github.com/dropboks/user-service/internal/domain/service"
-	_cache "github.com/dropboks/user-service/internal/infrastructure/cache"
-	_db "github.com/dropboks/user-service/internal/infrastructure/database"
-	"github.com/dropboks/user-service/internal/infrastructure/grpc"
-	_mq "github.com/dropboks/user-service/internal/infrastructure/message-queue"
 	"go.uber.org/dig"
 )
 
@@ -28,7 +28,7 @@ func BuildContainer() *dig.Container {
 		panic("Failed to provide database: " + err.Error())
 	}
 	// db querier
-if err := container.Provide(_db.NewQuerier); err != nil {
+	if err := container.Provide(_db.NewQuerier); err != nil {
 		panic("Failed to provide database querier`: " + err.Error())
 	}
 	// nats connection
