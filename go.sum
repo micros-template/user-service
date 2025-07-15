@@ -4,8 +4,8 @@
 10.1.20.130/dropping/proto-file v0.0.0-20250714044208-bb76fb12882b/go.mod h1:/sBTYRQCrElphtxKlj18NzSFelztTejpr1cclU11lzs=
 10.1.20.130/dropping/proto-user v0.0.0-20250714041933-087deb5804ce h1:1gDoNMb5xhm0cwmLCOa0l0LQJuE0tNRGDsFraU6TlFU=
 10.1.20.130/dropping/proto-user v0.0.0-20250714041933-087deb5804ce/go.mod h1:+WYk4dKj3PHnWFZmVKVpzLplnOvpkhOaDbrRin8hQUY=
-10.1.20.130/dropping/sharedlib v0.0.0-20250714040959-b4c973583218 h1:QQRxSqjZvsBaOW7vhxUxpzfyJnF3Z/SiTRYGinE1EIs=
-10.1.20.130/dropping/sharedlib v0.0.0-20250714040959-b4c973583218/go.mod h1:FNCczS4D2LXjPZVPekQloDB6DH4e5EYMf/KpouhTKxM=
+10.1.20.130/dropping/sharedlib v0.0.0-20250715071332-d012233aa476 h1:D1Sa+VPf2N97EvjpKLJf58OWYNuQC93eSovjShyL7OU=
+10.1.20.130/dropping/sharedlib v0.0.0-20250715071332-d012233aa476/go.mod h1:FNCczS4D2LXjPZVPekQloDB6DH4e5EYMf/KpouhTKxM=
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
 dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 h1:He8afgbRMd7mFxO99hRNu+6tazq8nFF9lIwo9JFroBk=
@@ -58,14 +58,8 @@ github.com/docker/go-connections v0.5.0 h1:USnMq7hx7gwdVZq1L49hLXaFtUdTADjXGp+uj
 github.com/docker/go-connections v0.5.0/go.mod h1:ov60Kzw0kKElRwhNs9UlUHAE/F9Fe6GLaXnqyDdmEXc=
 github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4=
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
-github.com/dropboks/event-bus-client v0.0.0-20250708092155-e109e3ad4b52 h1:O1BCGROYbPdPOvCscX9/Ds7fy0rIgXRdDDZqM26c1Pk=
-github.com/dropboks/event-bus-client v0.0.0-20250708092155-e109e3ad4b52/go.mod h1:XtyU7NgSNwDrgTxV2yD80ZssQoBsG80YeqdACesRvjQ=
 github.com/dropboks/proto-event v0.0.0-20250708021719-ce25723e7fdb h1:zFvAz1GZHqFTFC7LAr2xNF+3Hu/hDjKt20iNlvSp3pE=
 github.com/dropboks/proto-event v0.0.0-20250708021719-ce25723e7fdb/go.mod h1:ClgEboMshBbHYgllKyZ0Ym1vOqB4m4/IjxP8j7VDQqo=
-github.com/dropboks/proto-file v0.0.0-20250609044313-a7f78b2c48bf h1:w1OJZ9TkC62+E0tstPQFZqtYh32jnfbHHSYu/Oh7R9s=
-github.com/dropboks/proto-file v0.0.0-20250609044313-a7f78b2c48bf/go.mod h1:stfWzJh9Wmm3h5WqjQxMlEJFeUzWOlld4sc8HZrvYd4=
-github.com/dropboks/proto-user v0.0.0-20250709010613-66c877f96ac7 h1:sOJuKl07il+0jyk+G8E5rQqrY6yYt27dulmbj1tM7w0=
-github.com/dropboks/proto-user v0.0.0-20250709010613-66c877f96ac7/go.mod h1:Pj6/JS3foqIt7xuA+33mhrYt/4OmUjKS+7Jt0gx8YQw=
 github.com/ebitengine/purego v0.8.4 h1:CF7LEKg5FFOsASUj0+QwaXf8Ht6TlFxg09+S9wz0omw=
 github.com/ebitengine/purego v0.8.4/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
