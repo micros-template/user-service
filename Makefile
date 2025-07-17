@@ -46,8 +46,8 @@ pre-commit:
 	
 # 	remove docker images for the service cause latest is not updating automatically. force to always pulling
 	@echo "Removing services image"
-	@if docker images 10.1.20.130:5001/dropping/auth-service:latest | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/auth-service:test; fi
-	@if docker images 10.1.20.130:5001/dropping/user-service:test | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/user-service:latest; fi
+	@if docker images 10.1.20.130:5001/dropping/auth-service:latest | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/auth-service:latest; fi
+	@if docker images 10.1.20.130:5001/dropping/user-service:test | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/user-service:test; fi
 	@if docker images 10.1.20.130:5001/dropping/file-service:latest | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/file-service:latest; fi
 	@if docker images 10.1.20.130:5001/dropping/notification-service:latest | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/notification-service:latest; fi
 
