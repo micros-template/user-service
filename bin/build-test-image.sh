@@ -2,7 +2,7 @@
 
 mkdir -p ./bin/dist
 
-service_name="auth_service"
+service_name="user_service"
 
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "./bin/dist/$service_name" ./cmd
 wait
