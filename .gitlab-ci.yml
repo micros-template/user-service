@@ -53,6 +53,8 @@ go_test:
 image_build:
   stage: build
   image: golang:1.24-alpine3.22
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   before_script:
     - apk add --no-cache docker git
     - go env -w GOPRIVATE="10.1.20.130/*"
