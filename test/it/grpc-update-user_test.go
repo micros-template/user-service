@@ -20,18 +20,21 @@ type GRPCUpdateUserITSuite struct {
 	ctx context.Context
 
 	network              *testcontainers.DockerNetwork
+	gatewayContainer     *_helper.GatewayContainer
 	userPgContainer      *_helper.PostgresContainer
 	authPgContainer      *_helper.PostgresContainer
 	redisContainer       *_helper.RedisContainer
+	minioContainer       *_helper.MinioContainer
 	natsContainer        *_helper.NatsContainer
 	authContainer        *_helper.AuthServiceContainer
 	userServiceContainer *_helper.UserServiceContainer
+	fileServiceContainer *_helper.FileServiceContainer
 }
 
-func (c *GRPCUpdateUserITSuite) SetupSuite() {
+func (u *GRPCUpdateUserITSuite) SetupSuite() {
 
 	log.Println("Setting up integration test suite for GRPCUpdateUserITSuite")
-	c.ctx = context.Background()
+	u.ctx = context.Background()
 
 	viper.SetConfigName("config.test")
 	viper.SetConfigType("yaml")
@@ -40,87 +43,115 @@ func (c *GRPCUpdateUserITSuite) SetupSuite() {
 		panic("failed to read config")
 	}
 	// spawn sharedNetwork
-	c.network = _helper.StartNetwork(c.ctx)
+	u.network = _helper.StartNetwork(u.ctx)
 
 	// spawn user db
-	userPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "user_db", viper.GetString("container.postgresql_version"))
+	userPgContainer, err := _helper.StartPostgresContainer(u.ctx, u.network.Name, "test_user_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres user container: %s", err)
 	}
-	c.userPgContainer = userPgContainer
+	u.userPgContainer = userPgContainer
 
 	// spawn auth db
-	authPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "auth_db", viper.GetString("container.postgresql_version"))
+	authPgContainer, err := _helper.StartPostgresContainer(u.ctx, u.network.Name, "test_auth_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres auth container: %s", err)
 	}
-	c.authPgContainer = authPgContainer
+	u.authPgContainer = authPgContainer
 
 	// spawn redis
-	rContainer, err := _helper.StartRedisContainer(c.ctx, c.network.Name, viper.GetString("container.redis_version"))
+	rContainer, err := _helper.StartRedisContainer(u.ctx, u.network.Name, viper.GetString("container.redis_version"))
 	if err != nil {
 		log.Fatalf("failed starting redis container: %s", err)
 	}
-	c.redisContainer = rContainer
+	u.redisContainer = rContainer
 
-	// spawn nats
-	nContainer, err := _helper.StartNatsContainer(c.ctx, c.network.Name, viper.GetString("container.nats_version"))
+	mContainer, err := _helper.StartMinioContainer(u.ctx, u.network.Name, viper.GetString("container.minio_version"))
 	if err != nil {
 		log.Fatalf("failed starting minio container: %s", err)
 	}
-	c.natsContainer = nContainer
+	u.minioContainer = mContainer
 
-	aContainer, err := _helper.StartAuthServiceContainer(c.ctx, c.network.Name, viper.GetString("container.auth_service_version"))
+	// spawn nats
+	nContainer, err := _helper.StartNatsContainer(u.ctx, u.network.Name, viper.GetString("container.nats_version"))
+	if err != nil {
+		log.Fatalf("failed starting minio container: %s", err)
+	}
+	u.natsContainer = nContainer
+
+	aContainer, err := _helper.StartAuthServiceContainer(u.ctx, u.network.Name, viper.GetString("container.auth_service_version"))
 	if err != nil {
 		log.Println("make sure the image is exist")
 		log.Fatalf("failed starting auth service container: %s", err)
 	}
-	c.authContainer = aContainer
+	u.authContainer = aContainer
+
+	fContainer, err := _helper.StartFileServiceContainer(u.ctx, u.network.Name, viper.GetString("container.file_service_version"))
+	if err != nil {
+		log.Println("make sure the image is exist")
+		log.Fatalf("failed starting file service container: %s", err)
+	}
+	u.fileServiceContainer = fContainer
 
 	// spawn user service
-	uContainer, err := _helper.StartUserServiceContainer(c.ctx, c.network.Name, viper.GetString("container.user_service_version"))
+	uContainer, err := _helper.StartUserServiceContainer(u.ctx, u.network.Name, viper.GetString("container.user_service_version"))
 	if err != nil {
 		log.Println("make sure the image is exist")
 		log.Fatalf("failed starting user service container: %s", err)
 	}
-	c.userServiceContainer = uContainer
+	u.userServiceContainer = uContainer
 
+	gatewayContainer, err := _helper.StartGatewayContainer(u.ctx, u.network.Name, viper.GetString("container.gateway_version"))
+	if err != nil {
+		log.Fatalf("failed starting gateway container: %s", err)
+	}
+	u.gatewayContainer = gatewayContainer
+	time.Sleep(time.Second)
 }
 
-func (c *GRPCUpdateUserITSuite) TearDownSuite() {
-	if err := c.userPgContainer.Terminate(c.ctx); err != nil {
+func (u *GRPCUpdateUserITSuite) TearDownSuite() {
+	if err := u.userPgContainer.Terminate(u.ctx); err != nil {
 		log.Fatalf("error terminating user postgres container: %s", err)
 	}
-	if err := c.authPgContainer.Terminate(c.ctx); err != nil {
+	if err := u.authPgContainer.Terminate(u.ctx); err != nil {
 		log.Fatalf("error terminating auth postgres container: %s", err)
 	}
-	if err := c.redisContainer.Terminate(c.ctx); err != nil {
+	if err := u.redisContainer.Terminate(u.ctx); err != nil {
 		log.Fatalf("error terminating redis container: %s", err)
 	}
-	if err := c.natsContainer.Terminate(c.ctx); err != nil {
+	if err := u.minioContainer.Terminate(u.ctx); err != nil {
+		log.Fatalf("error terminating minio container: %s", err)
+	}
+	if err := u.natsContainer.Terminate(u.ctx); err != nil {
 		log.Fatalf("error terminating nats container: %s", err)
 	}
-	if err := c.authContainer.Terminate(c.ctx); err != nil {
+	if err := u.authContainer.Terminate(u.ctx); err != nil {
 		log.Fatalf("error terminating auth service container: %s", err)
 	}
-	if err := c.userServiceContainer.Terminate(c.ctx); err != nil {
+	if err := u.fileServiceContainer.Terminate(u.ctx); err != nil {
+		log.Fatalf("error terminating file service container: %s", err)
+	}
+	if err := u.userServiceContainer.Terminate(u.ctx); err != nil {
 		log.Fatalf("error terminating user service container: %s", err)
 	}
+	if err := u.gatewayContainer.Terminate(u.ctx); err != nil {
+		log.Fatalf("error terminating gateway container: %s", err)
+	}
+
 	log.Println("Tear Down integration test suite for GRPCUpdateUserITSuite")
 
 }
 func TestGRPCUpdateUserITSuite(t *testing.T) {
 	suite.Run(t, &GRPCUpdateUserITSuite{})
 }
-func (c *GRPCUpdateUserITSuite) TestUpdateUserIT_Success() {
+func (u *GRPCUpdateUserITSuite) TestUpdateUserIT_Success() {
 	email := fmt.Sprintf("test+%d@example.com", time.Now().UnixNano())
 	conn, err := helper.ConnectGRPC("localhost:50051")
-	c.Require().NoError(err, "Failed to connect to gRPC server")
+	u.Require().NoError(err, "Failed to connect to gRPC server")
 	defer conn.Close()
 	userServiceClient := upb.NewUserServiceClient(conn)
 
 	// register
-	// need to fill all
 	image := "image"
 	user := &upb.User{
 		Id:               "123",
@@ -132,11 +163,11 @@ func (c *GRPCUpdateUserITSuite) TestUpdateUserIT_Success() {
 		TwoFactorEnabled: false,
 	}
 
-	status, err := userServiceClient.CreateUser(c.ctx, user)
+	status, err := userServiceClient.CreateUser(u.ctx, user)
 
-	c.NoError(err)
-	c.NotNil(status)
-	c.Equal(true, status.Success)
+	u.NoError(err)
+	u.NotNil(status)
+	u.Equal(true, status.Success)
 
 	us := &upb.User{
 		Id:               "123",
@@ -148,14 +179,14 @@ func (c *GRPCUpdateUserITSuite) TestUpdateUserIT_Success() {
 		TwoFactorEnabled: false,
 	}
 
-	up, err := userServiceClient.UpdateUser(c.ctx, us)
+	up, err := userServiceClient.UpdateUser(u.ctx, us)
 
-	c.NoError(err)
-	c.NotNil(up)
-	c.Equal(true, status.Success)
+	u.NoError(err)
+	u.NotNil(up)
+	u.Equal(true, status.Success)
 }
 
-func (c *GRPCUpdateUserITSuite) TestUpdateUserIT_UserNotFound() {
+func (u *GRPCUpdateUserITSuite) TestUpdateUserIT_UserNotFound() {
 	email := fmt.Sprintf("test+%d@example.com", time.Now().UnixNano())
 
 	user := &upb.User{
@@ -164,13 +195,13 @@ func (c *GRPCUpdateUserITSuite) TestUpdateUserIT_UserNotFound() {
 		Email:    email,
 		Password: "password123",
 	}
-	conn, err := helper.ConnectGRPC("localhost:50051")
-	c.Require().NoError(err, "Failed to connect to gRPC server")
+	conn, err := helper.ConnectGRPC("10.1.20.130:50051")
+	u.Require().NoError(err, "Failed to connect to gRPC server")
 	defer conn.Close()
 
 	userServiceClient := upb.NewUserServiceClient(conn)
-	status, err := userServiceClient.UpdateUser(c.ctx, user)
+	status, err := userServiceClient.UpdateUser(u.ctx, user)
 
-	c.Error(err)
-	c.Nil(status)
+	u.Error(err)
+	u.Nil(status)
 }

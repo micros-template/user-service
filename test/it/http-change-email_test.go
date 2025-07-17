@@ -11,10 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/test/helper"
 	_helper "github.com/dropboks/sharedlib/test/helper"
-	"github.com/dropboks/sharedlib/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
@@ -26,6 +24,7 @@ type HTTPChangeEmailITSuite struct {
 	ctx context.Context
 
 	network                      *testcontainers.DockerNetwork
+	gatewayContainer             *_helper.GatewayContainer
 	userPgContainer              *_helper.PostgresContainer
 	authPgContainer              *_helper.PostgresContainer
 	redisContainer               *_helper.RedisContainer
@@ -52,14 +51,14 @@ func (c *HTTPChangeEmailITSuite) SetupSuite() {
 	c.network = _helper.StartNetwork(c.ctx)
 
 	// spawn user db
-	userPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "user_db", viper.GetString("container.postgresql_version"))
+	userPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "test_user_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres container: %s", err)
 	}
 	c.userPgContainer = userPgContainer
 
 	// spawn auth db
-	authPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "auth_db", viper.GetString("container.postgresql_version"))
+	authPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "test_auth_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres container: %s", err)
 	}
@@ -119,6 +118,13 @@ func (c *HTTPChangeEmailITSuite) SetupSuite() {
 		log.Fatalf("failed starting mailhog container: %s", err)
 	}
 	c.mailHogContainer = mailContainer
+
+	gatewayContainer, err := _helper.StartGatewayContainer(c.ctx, c.network.Name, viper.GetString("container.gateway_version"))
+	if err != nil {
+		log.Fatalf("failed starting gateway container: %s", err)
+	}
+	c.gatewayContainer = gatewayContainer
+	time.Sleep(time.Second)
 }
 
 func (c *HTTPChangeEmailITSuite) TearDownSuite() {
@@ -152,6 +158,10 @@ func (c *HTTPChangeEmailITSuite) TearDownSuite() {
 	if err := c.mailHogContainer.Terminate(c.ctx); err != nil {
 		log.Fatalf("error terminating mailhog container: %s", err)
 	}
+	if err := c.gatewayContainer.Terminate(c.ctx); err != nil {
+		log.Fatalf("error terminating gateway container: %s", err)
+	}
+
 	log.Println("Tear Down integration test suite for HTTPChangeEmailITSuite")
 
 }
@@ -177,7 +187,7 @@ func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_Success() {
 
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
-	regex := `http://localhost:8081/verify-email\?userid=[^&]+&token=[^"']+`
+	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
 	link := helper.RetrieveDataFromEmail(email, regex, "mail", c.T())
 
 	verifyRequest, err := http.NewRequest(http.MethodGet, link, nil)
@@ -214,24 +224,6 @@ func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_Success() {
 	jwt, ok := respData["data"].(string)
 	c.True(ok, "expected jwt token in data field")
 
-	// verify token
-	verifyReq, err := http.NewRequest(http.MethodPost, "http://localhost:8081/verify", nil)
-	c.NoError(err)
-	verifyReq.Header.Set("Authorization", "Bearer "+jwt)
-
-	verifyResp, err := client.Do(verifyReq)
-	c.NoError(err)
-	defer verifyResp.Body.Close()
-
-	c.Equal(http.StatusNoContent, verifyResp.StatusCode)
-	userDataHeader := verifyResp.Header.Get("User-Data")
-	c.NotEmpty(userDataHeader, "User-Data header should not be empty")
-
-	var ud utils.UserData
-	err = json.Unmarshal([]byte(userDataHeader), &ud)
-	c.NoError(err)
-	c.NotEmpty(ud.UserId, "user_id should not be empty")
-
 	// change email
 	reqBody := &bytes.Buffer{}
 
@@ -240,9 +232,9 @@ func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_Success() {
 	}
 	_ = json.NewEncoder(reqBody).Encode(encoder)
 
-	request, err = http.NewRequest(http.MethodPatch, "http://localhost:8082/email", reqBody)
+	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/email", reqBody)
+	request.Header.Set("Authorization", "Bearer "+jwt)
 	c.NoError(err)
-	request.Header.Set("User-Data", userDataHeader)
 
 	client = http.Client{}
 	response, err = client.Do(request)
@@ -255,33 +247,85 @@ func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_Success() {
 	c.Contains(string(byteBody), "verify to change email")
 }
 
-func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_MissingUserId() {
+// not applicable because verify is in middlewware
+func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_MisingToken() {
 
-	request, err := http.NewRequest(http.MethodPatch, "http://localhost:8082/email", nil)
+	request, err := http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/email", nil)
 	c.NoError(err)
 
 	client := http.Client{}
 	response, err := client.Do(request)
 	c.NoError(err)
-
-	byteBody, err := io.ReadAll(response.Body)
 
 	c.Equal(http.StatusUnauthorized, response.StatusCode)
 	c.NoError(err)
-	c.Contains(string(byteBody), dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 }
 
 func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_MissingBody() {
-
-	request, err := http.NewRequest(http.MethodPatch, "http://localhost:8082/email", nil)
-	c.NoError(err)
-	request.Header.Set("User-Data", `{"user_id":"12345"}`)
+	// register
+	email := fmt.Sprintf("test+%d@example.com", time.Now().UnixNano())
+	request := helper.Register(email, c.T())
 
 	client := http.Client{}
 	response, err := client.Do(request)
 	c.NoError(err)
 
 	byteBody, err := io.ReadAll(response.Body)
+	c.NoError(err)
+
+	c.Equal(http.StatusCreated, response.StatusCode)
+	c.Contains(string(byteBody), "Register Success. Check your email for verification.")
+	response.Body.Close()
+
+	time.Sleep(time.Second) //give a time for auth_db update the user
+
+	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
+	link := helper.RetrieveDataFromEmail(email, regex, "mail", c.T())
+
+	verifyRequest, err := http.NewRequest(http.MethodGet, link, nil)
+	c.NoError(err)
+
+	verifyResponse, err := client.Do(verifyRequest)
+	c.NoError(err)
+
+	verifyBody, err := io.ReadAll(verifyResponse.Body)
+	c.NoError(err)
+
+	c.Equal(http.StatusOK, verifyResponse.StatusCode)
+	c.Contains(string(verifyBody), "Verification Success")
+
+	time.Sleep(time.Second) //give a time for auth_db update the user
+
+	// login
+	request = helper.Login(email, c.T())
+
+	client = http.Client{}
+	response, err = client.Do(request)
+	c.NoError(err)
+
+	byteBody, err = io.ReadAll(response.Body)
+
+	c.Equal(http.StatusOK, response.StatusCode)
+	c.NoError(err)
+	c.Contains(string(byteBody), "Login Success")
+
+	var respData map[string]interface{}
+	err = json.Unmarshal(byteBody, &respData)
+	c.NoError(err)
+
+	jwt, ok := respData["data"].(string)
+	c.True(ok, "expected jwt token in data field")
+
+	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/email", nil)
+	request.Header.Set("Authorization", "Bearer "+jwt)
+
+	c.NoError(err)
+
+	client = http.Client{}
+	response, err = client.Do(request)
+	c.NoError(err)
+
+	byteBody, err = io.ReadAll(response.Body)
 
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.NoError(err)

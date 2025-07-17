@@ -29,7 +29,7 @@ var (
 
 	Err_BAD_REQUEST_WRONG_EXTENSION                        = errors.New("error file extension, support jpg, jpeg, and png")
 	Err_BAD_REQUEST_LIMIT_SIZE_EXCEEDED                    = errors.New("max size exceeded: 6mb")
-	Err_BAD_REQUEST_PASSWORD_CONFIRM_PASSWORD_DOESNT_MATCH = errors.New("max size exceeded: 6mb")
+	Err_BAD_REQUEST_PASSWORD_CONFIRM_PASSWORD_DOESNT_MATCH = errors.New("password doesn't match")
 )
 
 type (

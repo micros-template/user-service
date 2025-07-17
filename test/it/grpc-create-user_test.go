@@ -20,12 +20,15 @@ type GRPCCreateUserITSuite struct {
 	ctx context.Context
 
 	network              *testcontainers.DockerNetwork
+	gatewayContainer     *_helper.GatewayContainer
 	userPgContainer      *_helper.PostgresContainer
 	authPgContainer      *_helper.PostgresContainer
 	redisContainer       *_helper.RedisContainer
+	minioContainer       *_helper.MinioContainer
 	natsContainer        *_helper.NatsContainer
 	authContainer        *_helper.AuthServiceContainer
 	userServiceContainer *_helper.UserServiceContainer
+	fileServiceContainer *_helper.FileServiceContainer
 }
 
 func (c *GRPCCreateUserITSuite) SetupSuite() {
@@ -42,14 +45,14 @@ func (c *GRPCCreateUserITSuite) SetupSuite() {
 	c.network = _helper.StartNetwork(c.ctx)
 
 	// spawn user db
-	userPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "user_db", viper.GetString("container.postgresql_version"))
+	userPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "test_user_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres container: %s", err)
 	}
 	c.userPgContainer = userPgContainer
 
 	// spawn auth db
-	authPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "auth_db", viper.GetString("container.postgresql_version"))
+	authPgContainer, err := _helper.StartPostgresContainer(c.ctx, c.network.Name, "test_auth_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres container: %s", err)
 	}
@@ -61,6 +64,12 @@ func (c *GRPCCreateUserITSuite) SetupSuite() {
 		log.Fatalf("failed starting redis container: %s", err)
 	}
 	c.redisContainer = rContainer
+
+	mContainer, err := _helper.StartMinioContainer(c.ctx, c.network.Name, viper.GetString("container.minio_version"))
+	if err != nil {
+		log.Fatalf("failed starting minio container: %s", err)
+	}
+	c.minioContainer = mContainer
 
 	// spawn nats
 	nContainer, err := _helper.StartNatsContainer(c.ctx, c.network.Name, viper.GetString("container.nats_version"))
@@ -76,6 +85,12 @@ func (c *GRPCCreateUserITSuite) SetupSuite() {
 	}
 	c.authContainer = aContainer
 
+	fContainer, err := _helper.StartFileServiceContainer(c.ctx, c.network.Name, viper.GetString("container.file_service_version"))
+	if err != nil {
+		log.Println("make sure the image is exist")
+		log.Fatalf("failed starting file service container: %s", err)
+	}
+	c.fileServiceContainer = fContainer
 	// spawn user service
 	uContainer, err := _helper.StartUserServiceContainer(c.ctx, c.network.Name, viper.GetString("container.user_service_version"))
 	if err != nil {
@@ -84,6 +99,12 @@ func (c *GRPCCreateUserITSuite) SetupSuite() {
 	}
 	c.userServiceContainer = uContainer
 
+	gatewayContainer, err := _helper.StartGatewayContainer(c.ctx, c.network.Name, viper.GetString("container.gateway_version"))
+	if err != nil {
+		log.Fatalf("failed starting gateway container: %s", err)
+	}
+	c.gatewayContainer = gatewayContainer
+	time.Sleep(time.Second)
 }
 
 func (c *GRPCCreateUserITSuite) TearDownSuite() {
@@ -96,15 +117,25 @@ func (c *GRPCCreateUserITSuite) TearDownSuite() {
 	if err := c.redisContainer.Terminate(c.ctx); err != nil {
 		log.Fatalf("error terminating redis container: %s", err)
 	}
+	if err := c.minioContainer.Terminate(c.ctx); err != nil {
+		log.Fatalf("error terminating minio container: %s", err)
+	}
 	if err := c.natsContainer.Terminate(c.ctx); err != nil {
 		log.Fatalf("error terminating nats container: %s", err)
 	}
 	if err := c.authContainer.Terminate(c.ctx); err != nil {
 		log.Fatalf("error terminating auth service container: %s", err)
 	}
+	if err := c.fileServiceContainer.Terminate(c.ctx); err != nil {
+		log.Fatalf("error terminating file service container: %s", err)
+	}
 	if err := c.userServiceContainer.Terminate(c.ctx); err != nil {
 		log.Fatalf("error terminating user service container: %s", err)
 	}
+	if err := c.gatewayContainer.Terminate(c.ctx); err != nil {
+		log.Fatalf("error terminating gateway container: %s", err)
+	}
+
 	log.Println("Tear Down integration test suite for GRPCCreateUserITSuite")
 }
 func TestGRPCreateUserITSuite(t *testing.T) {

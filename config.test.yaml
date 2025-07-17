@@ -69,7 +69,7 @@ server:
 container:
   auth_service_version: "latest"
   file_service_version: "latest"
-  user_service_version: "latest"
+  user_service_version: "test"
   notification_service_version: "latest"
   gateway_version: "1.28.0-alpine-slim"
   nats_version: "2.11.6"

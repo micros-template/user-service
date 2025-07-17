@@ -31,13 +31,25 @@ pre-commit:
 	@echo "Running go vet..."
 	@go vet ./... || (echo "[FAIL] go vet failed." && exit 1)
 
+# 	build docker image first to be tested later
+	@echo "build user-service:test image"
+	@chmod +x ./bin/build-precommit-test.sh
+	@./bin/build-precommit-test.sh
+
 	@echo "Running go test (unit testing)..."
 	@go test ./test/ut/... -v || (echo "[FAIL] Unit testing failed." && exit 1)
 
 	@echo "Running go test (integration testing)..."
 	@go test ./test/it/... -v || (echo "[FAIL] Integration testing failed." && exit 1)
 
-	@echo "[SUCCESS] Pre-commit checks passed!"
+	@echo "[SUCCESS] Pre-commit checks passed!"	
+	
+# 	remove docker images for the service cause latest is not updating automatically. force to always pulling
+	@echo "Removing services image"
+	@if docker images 10.1.20.130:5001/dropping/auth-service:latest | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/auth-service:test; fi
+	@if docker images 10.1.20.130:5001/dropping/user-service:test | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/user-service:latest; fi
+	@if docker images 10.1.20.130:5001/dropping/file-service:latest | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/file-service:latest; fi
+	@if docker images 10.1.20.130:5001/dropping/notification-service:latest | awk 'NR>1 {print $1}' | grep -q .; then docker rmi 10.1.20.130:5001/dropping/notification-service:latest; fi
 
 pre-commit-preparation:
 	@cp ./bin/pre-commit ./.git/hooks/pre-commit

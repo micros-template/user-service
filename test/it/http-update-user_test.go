@@ -15,7 +15,6 @@ import (
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/test/helper"
 	_helper "github.com/dropboks/sharedlib/test/helper"
-	"github.com/dropboks/sharedlib/utils"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
@@ -26,6 +25,7 @@ type HTTPUpdateUserITSuite struct {
 	ctx context.Context
 
 	network                      *testcontainers.DockerNetwork
+	gatewayContainer             *_helper.GatewayContainer
 	userPgContainer              *_helper.PostgresContainer
 	authPgContainer              *_helper.PostgresContainer
 	redisContainer               *_helper.RedisContainer
@@ -52,14 +52,14 @@ func (u *HTTPUpdateUserITSuite) SetupSuite() {
 	u.network = _helper.StartNetwork(u.ctx)
 
 	// spawn user db
-	userPgContainer, err := _helper.StartPostgresContainer(u.ctx, u.network.Name, "user_db", viper.GetString("container.postgresql_version"))
+	userPgContainer, err := _helper.StartPostgresContainer(u.ctx, u.network.Name, "test_user_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres container: %s", err)
 	}
 	u.userPgContainer = userPgContainer
 
 	// spawn auth db
-	authPgContainer, err := _helper.StartPostgresContainer(u.ctx, u.network.Name, "auth_db", viper.GetString("container.postgresql_version"))
+	authPgContainer, err := _helper.StartPostgresContainer(u.ctx, u.network.Name, "test_auth_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres container: %s", err)
 	}
@@ -119,6 +119,13 @@ func (u *HTTPUpdateUserITSuite) SetupSuite() {
 		log.Fatalf("failed starting mailhog container: %s", err)
 	}
 	u.mailHogContainer = mailContainer
+
+	gatewayContainer, err := _helper.StartGatewayContainer(u.ctx, u.network.Name, viper.GetString("container.gateway_version"))
+	if err != nil {
+		log.Fatalf("failed starting gateway container: %s", err)
+	}
+	u.gatewayContainer = gatewayContainer
+	time.Sleep(time.Second)
 }
 
 func (u *HTTPUpdateUserITSuite) TearDownSuite() {
@@ -152,6 +159,9 @@ func (u *HTTPUpdateUserITSuite) TearDownSuite() {
 	if err := u.mailHogContainer.Terminate(u.ctx); err != nil {
 		log.Fatalf("error terminating mailhog container: %s", err)
 	}
+	if err := u.gatewayContainer.Terminate(u.ctx); err != nil {
+		log.Fatalf("error terminating gateway container: %s", err)
+	}
 
 	log.Println("Tear Down integration test suite for HTTPUpdateUserITSuite")
 }
@@ -177,7 +187,7 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_Success() {
 
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
-	regex := `http://localhost:8081/verify-email\?userid=[^&]+&token=[^"']+`
+	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
 	link := helper.RetrieveDataFromEmail(email, regex, "mail", u.T())
 
 	verifyRequest, err := http.NewRequest(http.MethodGet, link, nil)
@@ -214,36 +224,16 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_Success() {
 	jwt, ok := respData["data"].(string)
 	u.True(ok, "expected jwt token in data field")
 
-	// verify token
-	verifyReq, err := http.NewRequest(http.MethodPost, "http://localhost:8081/verify", nil)
-	u.NoError(err)
-	verifyReq.Header.Set("Authorization", "Bearer "+jwt)
-
-	verifyResp, err := client.Do(verifyReq)
-	u.NoError(err)
-	defer verifyResp.Body.Close()
-
-	u.Equal(http.StatusNoContent, verifyResp.StatusCode)
-	userDataHeader := verifyResp.Header.Get("User-Data")
-	u.NotEmpty(userDataHeader, "User-Data header should not be empty")
-
-	var ud utils.UserData
-	err = json.Unmarshal([]byte(userDataHeader), &ud)
-	u.NoError(err)
-	u.NotEmpty(ud.UserId, "user_id should not be empty")
-
 	// update user
-
 	reqBody := &bytes.Buffer{}
 	formWriter := multipart.NewWriter(reqBody)
 	_ = formWriter.WriteField("full_name", "test-full-name")
 	formWriter.Close()
 
-	request, err = http.NewRequest(http.MethodPatch, "http://localhost:8082/", reqBody)
+	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
-
+	request.Header.Set("Authorization", "Bearer "+jwt)
 	u.NoError(err)
-	request.Header.Set("User-Data", userDataHeader)
 
 	client = http.Client{}
 	response, err = client.Do(request)
@@ -263,64 +253,19 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_MissingUserID() {
 	_ = formWriter.WriteField("full_name", "test-full-name")
 	formWriter.Close()
 
-	request, err := http.NewRequest(http.MethodPatch, "http://localhost:8082/", reqBody)
+	request, err := http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
 	u.NoError(err)
 
 	client := http.Client{}
 	response, err := client.Do(request)
 	u.NoError(err)
-
-	byteBody, err := io.ReadAll(response.Body)
 
 	u.Equal(http.StatusUnauthorized, response.StatusCode)
 	u.NoError(err)
-	u.Contains(string(byteBody), dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 }
 
 func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_MissingBody() {
-
-	request, err := http.NewRequest(http.MethodPatch, "http://localhost:8082/", nil)
-
-	u.NoError(err)
-	request.Header.Set("User-Data", `{"user_id":"12345"}`)
-
-	client := http.Client{}
-	response, err := client.Do(request)
-	u.NoError(err)
-
-	byteBody, err := io.ReadAll(response.Body)
-
-	u.Equal(http.StatusBadRequest, response.StatusCode)
-	u.NoError(err)
-	u.Contains(string(byteBody), "invalid input")
-}
-
-func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_UserNotFound() {
-
-	reqBody := &bytes.Buffer{}
-	formWriter := multipart.NewWriter(reqBody)
-	_ = formWriter.WriteField("full_name", "test-full-name")
-	formWriter.Close()
-
-	request, err := http.NewRequest(http.MethodPatch, "http://localhost:8082/", reqBody)
-	request.Header.Set("Content-Type", formWriter.FormDataContentType())
-
-	u.NoError(err)
-	request.Header.Set("User-Data", `{"user_id":"12345"}`)
-
-	client := http.Client{}
-	response, err := client.Do(request)
-	u.NoError(err)
-
-	byteBody, err := io.ReadAll(response.Body)
-
-	u.Equal(http.StatusNotFound, response.StatusCode)
-	u.NoError(err)
-	u.Contains(string(byteBody), dto.Err_NOTFOUND_USER_NOT_FOUND.Error())
-}
-
-func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageWrongExtension() {
 	// register
 	email := fmt.Sprintf("test+%d@example.com", time.Now().UnixNano())
 	request := helper.Register(email, u.T())
@@ -338,7 +283,7 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageWrongExtension() {
 
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
-	regex := `http://localhost:8081/verify-email\?userid=[^&]+&token=[^"']+`
+	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
 	link := helper.RetrieveDataFromEmail(email, regex, "mail", u.T())
 
 	verifyRequest, err := http.NewRequest(http.MethodGet, link, nil)
@@ -375,26 +320,104 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageWrongExtension() {
 	jwt, ok := respData["data"].(string)
 	u.True(ok, "expected jwt token in data field")
 
-	// verify token
-	verifyReq, err := http.NewRequest(http.MethodPost, "http://localhost:8081/verify", nil)
-	u.NoError(err)
-	verifyReq.Header.Set("Authorization", "Bearer "+jwt)
+	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", nil)
+	request.Header.Set("Authorization", "Bearer "+jwt)
 
-	verifyResp, err := client.Do(verifyReq)
 	u.NoError(err)
-	defer verifyResp.Body.Close()
 
-	u.Equal(http.StatusNoContent, verifyResp.StatusCode)
-	userDataHeader := verifyResp.Header.Get("User-Data")
-	u.NotEmpty(userDataHeader, "User-Data header should not be empty")
-
-	var ud utils.UserData
-	err = json.Unmarshal([]byte(userDataHeader), &ud)
+	client = http.Client{}
+	response, err = client.Do(request)
 	u.NoError(err)
-	u.NotEmpty(ud.UserId, "user_id should not be empty")
+
+	byteBody, err = io.ReadAll(response.Body)
+
+	u.Equal(http.StatusBadRequest, response.StatusCode)
+	u.NoError(err)
+	u.Contains(string(byteBody), "invalid input")
+}
+
+// not applicable due to checking in the previous layer and case (register, login, and verification middleware)
+
+// func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_UserNotFound() {
+
+// 	reqBody := &bytes.Buffer{}
+// 	formWriter := multipart.NewWriter(reqBody)
+// 	_ = formWriter.WriteField("full_name", "test-full-name")
+// 	formWriter.Close()
+
+// 	request, err := http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
+// 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
+
+// 	u.NoError(err)
+// 	request.Header.Set("User-Data", `{"user_id":"12345"}`)
+
+// 	client := http.Client{}
+// 	response, err := client.Do(request)
+// 	u.NoError(err)
+
+// 	byteBody, err := io.ReadAll(response.Body)
+
+// 	u.Equal(http.StatusNotFound, response.StatusCode)
+// 	u.NoError(err)
+// 	u.Contains(string(byteBody), dto.Err_NOTFOUND_USER_NOT_FOUND.Error())
+// }
+
+func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageWrongExtension() {
+	// register
+	email := fmt.Sprintf("test+%d@example.com", time.Now().UnixNano())
+	request := helper.Register(email, u.T())
+
+	client := http.Client{}
+	response, err := client.Do(request)
+	u.NoError(err)
+
+	byteBody, err := io.ReadAll(response.Body)
+	u.NoError(err)
+
+	u.Equal(http.StatusCreated, response.StatusCode)
+	u.Contains(string(byteBody), "Register Success. Check your email for verification.")
+	response.Body.Close()
+
+	time.Sleep(time.Second) //give a time for auth_db update the user
+
+	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
+	link := helper.RetrieveDataFromEmail(email, regex, "mail", u.T())
+
+	verifyRequest, err := http.NewRequest(http.MethodGet, link, nil)
+	u.NoError(err)
+
+	verifyResponse, err := client.Do(verifyRequest)
+	u.NoError(err)
+
+	verifyBody, err := io.ReadAll(verifyResponse.Body)
+	u.NoError(err)
+
+	u.Equal(http.StatusOK, verifyResponse.StatusCode)
+	u.Contains(string(verifyBody), "Verification Success")
+
+	time.Sleep(time.Second) //give a time for auth_db update the user
+
+	// login
+	request = helper.Login(email, u.T())
+
+	client = http.Client{}
+	response, err = client.Do(request)
+	u.NoError(err)
+
+	byteBody, err = io.ReadAll(response.Body)
+
+	u.Equal(http.StatusOK, response.StatusCode)
+	u.NoError(err)
+	u.Contains(string(byteBody), "Login Success")
+
+	var respData map[string]interface{}
+	err = json.Unmarshal(byteBody, &respData)
+	u.NoError(err)
+
+	jwt, ok := respData["data"].(string)
+	u.True(ok, "expected jwt token in data field")
 
 	// update user
-
 	reqBody := &bytes.Buffer{}
 
 	formWriter := multipart.NewWriter(reqBody)
@@ -406,11 +429,11 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageWrongExtension() {
 	}
 	formWriter.Close()
 
-	request, err = http.NewRequest(http.MethodPatch, "http://localhost:8082/", reqBody)
+	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
+	request.Header.Set("Authorization", "Bearer "+jwt)
 
 	u.NoError(err)
-	request.Header.Set("User-Data", userDataHeader)
 
 	client = http.Client{}
 	response, err = client.Do(request)
@@ -441,7 +464,7 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageLimitSizeExceeded() {
 
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
-	regex := `http://localhost:8081/verify-email\?userid=[^&]+&token=[^"']+`
+	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
 	link := helper.RetrieveDataFromEmail(email, regex, "mail", u.T())
 
 	verifyRequest, err := http.NewRequest(http.MethodGet, link, nil)
@@ -478,24 +501,6 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageLimitSizeExceeded() {
 	jwt, ok := respData["data"].(string)
 	u.True(ok, "expected jwt token in data field")
 
-	// verify token
-	verifyReq, err := http.NewRequest(http.MethodPost, "http://localhost:8081/verify", nil)
-	u.NoError(err)
-	verifyReq.Header.Set("Authorization", "Bearer "+jwt)
-
-	verifyResp, err := client.Do(verifyReq)
-	u.NoError(err)
-	defer verifyResp.Body.Close()
-
-	u.Equal(http.StatusNoContent, verifyResp.StatusCode)
-	userDataHeader := verifyResp.Header.Get("User-Data")
-	u.NotEmpty(userDataHeader, "User-Data header should not be empty")
-
-	var ud utils.UserData
-	err = json.Unmarshal([]byte(userDataHeader), &ud)
-	u.NoError(err)
-	u.NotEmpty(ud.UserId, "user_id should not be empty")
-
 	// update user
 	reqBody := &bytes.Buffer{}
 
@@ -509,11 +514,11 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageLimitSizeExceeded() {
 		log.Fatal("failed to create image data")
 	}
 	formWriter.Close()
-	request, err = http.NewRequest(http.MethodPatch, "http://localhost:8082/", reqBody)
+	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
+	request.Header.Set("Authorization", "Bearer "+jwt)
 
 	u.NoError(err)
-	request.Header.Set("User-Data", userDataHeader)
 
 	client = http.Client{}
 	response, err = client.Do(request)

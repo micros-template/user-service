@@ -8,7 +8,6 @@ import (
 	"mime/multipart"
 	"mime/quotedprintable"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"testing"
@@ -21,11 +20,7 @@ import (
 )
 
 func ConnectGRPC(grpcURL string) (*grpc.ClientConn, error) {
-	u, err := url.Parse(grpcURL)
-	if err != nil {
-		return nil, err
-	}
-	return grpc.NewClient(u.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	return grpc.NewClient(grpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 }
 
 func Login(email string, t *testing.T) *http.Request {
@@ -37,7 +32,7 @@ func Login(email string, t *testing.T) *http.Request {
 	}
 	_ = json.NewEncoder(reqBody).Encode(encoder)
 
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8081/login", reqBody)
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:9090/api/v1/auth/login", reqBody)
 	assert.NoError(t, err)
 	return req
 }
@@ -58,7 +53,7 @@ func Register(email string, t *testing.T) *http.Request {
 	}
 	formWriter.Close()
 
-	request, err := http.NewRequest(http.MethodPost, "http://localhost:8081/register", reqBody)
+	request, err := http.NewRequest(http.MethodPost, "http://localhost:9090/api/v1/auth/register", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
 
 	assert.NoError(t, err)

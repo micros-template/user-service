@@ -10,10 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/test/helper"
 	_helper "github.com/dropboks/sharedlib/test/helper"
-	"github.com/dropboks/sharedlib/utils"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
@@ -24,6 +22,7 @@ type HTTPGetProfileITSuite struct {
 	ctx context.Context
 
 	network                      *testcontainers.DockerNetwork
+	gatewayContainer             *_helper.GatewayContainer
 	userPgContainer              *_helper.PostgresContainer
 	authPgContainer              *_helper.PostgresContainer
 	redisContainer               *_helper.RedisContainer
@@ -51,14 +50,14 @@ func (g *HTTPGetProfileITSuite) SetupSuite() {
 	g.network = _helper.StartNetwork(g.ctx)
 
 	// spawn user db
-	userPgContainer, err := _helper.StartPostgresContainer(g.ctx, g.network.Name, "user_db", viper.GetString("container.postgresql_version"))
+	userPgContainer, err := _helper.StartPostgresContainer(g.ctx, g.network.Name, "test_user_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres container: %s", err)
 	}
 	g.userPgContainer = userPgContainer
 
 	// spawn auth db
-	authPgContainer, err := _helper.StartPostgresContainer(g.ctx, g.network.Name, "auth_db", viper.GetString("container.postgresql_version"))
+	authPgContainer, err := _helper.StartPostgresContainer(g.ctx, g.network.Name, "test_auth_db", viper.GetString("container.postgresql_version"))
 	if err != nil {
 		log.Fatalf("failed starting postgres container: %s", err)
 	}
@@ -118,6 +117,13 @@ func (g *HTTPGetProfileITSuite) SetupSuite() {
 		log.Fatalf("failed starting mailhog container: %s", err)
 	}
 	g.mailHogContainer = mailContainer
+
+	gatewayContainer, err := _helper.StartGatewayContainer(g.ctx, g.network.Name, viper.GetString("container.gateway_version"))
+	if err != nil {
+		log.Fatalf("failed starting gateway container: %s", err)
+	}
+	g.gatewayContainer = gatewayContainer
+	time.Sleep(time.Second)
 }
 
 func (g *HTTPGetProfileITSuite) TearDownSuite() {
@@ -151,6 +157,9 @@ func (g *HTTPGetProfileITSuite) TearDownSuite() {
 	if err := g.mailHogContainer.Terminate(g.ctx); err != nil {
 		log.Fatalf("error terminating mailhog container: %s", err)
 	}
+	if err := g.gatewayContainer.Terminate(g.ctx); err != nil {
+		log.Fatalf("error terminating gateway container: %s", err)
+	}
 
 	log.Println("Tear Down integration test suite for HTTPGetProfileITSuite")
 
@@ -177,7 +186,7 @@ func (g *HTTPGetProfileITSuite) TestGetProfileIT_Success() {
 
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
-	regex := `http://localhost:8081/verify-email\?userid=[^&]+&token=[^"']+`
+	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
 	link := helper.RetrieveDataFromEmail(email, regex, "mail", g.T())
 
 	verifyRequest, err := http.NewRequest(http.MethodGet, link, nil)
@@ -214,28 +223,11 @@ func (g *HTTPGetProfileITSuite) TestGetProfileIT_Success() {
 	jwt, ok := respData["data"].(string)
 	g.True(ok, "expected jwt token in data field")
 
-	// verify token
-	verifyReq, err := http.NewRequest(http.MethodPost, "http://localhost:8081/verify", nil)
-	g.NoError(err)
-	verifyReq.Header.Set("Authorization", "Bearer "+jwt)
-
-	verifyResp, err := client.Do(verifyReq)
-	g.NoError(err)
-	defer verifyResp.Body.Close()
-
-	g.Equal(http.StatusNoContent, verifyResp.StatusCode)
-	userDataHeader := verifyResp.Header.Get("User-Data")
-	g.NotEmpty(userDataHeader, "User-Data header should not be empty")
-
-	var ud utils.UserData
-	err = json.Unmarshal([]byte(userDataHeader), &ud)
-	g.NoError(err)
-	g.NotEmpty(ud.UserId, "user_id should not be empty")
-
 	// get profile
-	request, err = http.NewRequest(http.MethodGet, "http://localhost:8082/me", nil)
+	request, err = http.NewRequest(http.MethodGet, "http://localhost:9090/api/v1/user/me", nil)
+	request.Header.Set("Authorization", "Bearer "+jwt)
+
 	g.NoError(err)
-	request.Header.Set("User-Data", userDataHeader)
 
 	client = http.Client{}
 	response, err = client.Do(request)
@@ -248,37 +240,36 @@ func (g *HTTPGetProfileITSuite) TestGetProfileIT_Success() {
 	g.Contains(string(byteBody), "success get profile data")
 }
 
-func (g *HTTPGetProfileITSuite) TestGetProfileIT_MissingUserID() {
+func (g *HTTPGetProfileITSuite) TestGetProfileIT_MissingToken() {
 	// get profile
-	request, err := http.NewRequest(http.MethodGet, "http://localhost:8082/me", nil)
+	request, err := http.NewRequest(http.MethodGet, "http://localhost:9090/api/v1/user/me", nil)
 	g.NoError(err)
 
 	client := http.Client{}
 	response, err := client.Do(request)
 	g.NoError(err)
-
-	byteBody, err := io.ReadAll(response.Body)
 
 	g.Equal(http.StatusUnauthorized, response.StatusCode)
 	g.NoError(err)
-	g.Contains(string(byteBody), dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 }
 
-func (g *HTTPGetProfileITSuite) TestGetProfileIT_UserNotFound() {
-	// get profile
-	request, err := http.NewRequest(http.MethodGet, "http://localhost:8082/me", nil)
-	g.NoError(err)
-	request.Header.Set("User-Data", `{"user_id":"12345"}`)
+// not applicable due to checking in the previous layer and case (register, login, and verification middleware)
 
-	g.NoError(err)
+// func (g *HTTPGetProfileITSuite) TestGetProfileIT_UserNotFound() {
+// 	// get profile
+// 	request, err := http.NewRequest(http.MethodGet, "http://localhost:9090/api/v1/user/me", nil)
+// 	g.NoError(err)
+// 	request.Header.Set("User-Data", `{"user_id":"12345"}`)
 
-	client := http.Client{}
-	response, err := client.Do(request)
-	g.NoError(err)
+// 	g.NoError(err)
 
-	byteBody, err := io.ReadAll(response.Body)
+// 	client := http.Client{}
+// 	response, err := client.Do(request)
+// 	g.NoError(err)
 
-	g.Equal(http.StatusNotFound, response.StatusCode)
-	g.NoError(err)
-	g.Contains(string(byteBody), dto.Err_NOTFOUND_USER_NOT_FOUND.Error())
-}
+// 	byteBody, err := io.ReadAll(response.Body)
+
+// 	g.Equal(http.StatusNotFound, response.StatusCode)
+// 	g.NoError(err)
+// 	g.Contains(string(byteBody), dto.Err_NOTFOUND_USER_NOT_FOUND.Error())
+// }
