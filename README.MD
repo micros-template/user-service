@@ -15,3 +15,11 @@ go env -w GOPRIVATE="10.1.20.130/*"
 go env -w GOINSECURE="10.1.20.130/*"
 git config --global url."10.1.20.130".insteadOf https://10.1.20.130/
 ```
+
+## Insecure Registry docker setting
+
+```bash
+{
+  "insecure-registries": ["10.1.20.130:5001"]
+}
+```
