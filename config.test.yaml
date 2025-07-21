@@ -65,6 +65,8 @@ server:
     expose_headers: "Content-Length, Content-Range"
     max_age: 86400
     allow_credential: true
+jwt:
+  secret_key: "jwt_secret_test"
 
 container:
   auth_service_version: "latest"
