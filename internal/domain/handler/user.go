@@ -18,6 +18,7 @@ type (
 		UpdateUser(ctx *gin.Context)
 		ChangeEmail(ctx *gin.Context)
 		ChangePassword(ctx *gin.Context)
+		DeleteUser(ctx *gin.Context)
 	}
 	userHandler struct {
 		userService service.UserService
@@ -30,6 +31,40 @@ func NewUserHandler(userService service.UserService, logger zerolog.Logger) User
 		userService: userService,
 		logger:      logger,
 	}
+}
+
+func (u *userHandler) DeleteUser(ctx *gin.Context) {
+	userId := utils.GetUserId(ctx)
+	if userId == "" {
+		u.logger.Error().Msg("unathorized. userId is not found")
+		res := utils.ReturnResponseError(401, dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
+		return
+	}
+	var req dto.DeleteUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		u.logger.Error().Err(err).Msg("Bad Request")
+		res := utils.ReturnResponseError(400, "invalid input")
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+	if err := u.userService.DeleteUser(&req, userId); err != nil {
+		switch err {
+		case dto.Err_UNAUTHORIZED_PASSWORD_WRONG:
+			res := utils.ReturnResponseError(401, err.Error())
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
+			return
+		case dto.Err_NOTFOUND_USER_NOT_FOUND:
+			res := utils.ReturnResponseError(404, err.Error())
+			ctx.AbortWithStatusJSON(http.StatusNotFound, res)
+			return
+		}
+		res := utils.ReturnResponseError(500, err.Error())
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+		return
+	}
+	res := utils.ReturnResponseSuccess(200, dto.SUCCESS_DELETE_USER)
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (u *userHandler) ChangePassword(ctx *gin.Context) {

@@ -26,6 +26,7 @@ type (
 		UpdateUser(req *dto.UpdateUserRequest, userId string) error
 		UpdateEmail(req *dto.UpdateEmailRequest, userId string) error
 		UpdatePassword(req *dto.UpdatePasswordRequest, userId string) error
+		DeleteUser(req *dto.DeleteUserRequest, userId string) error
 	}
 	userService struct {
 		userRepository     repository.UserRepository
@@ -52,6 +53,25 @@ func NewUserService(userRepo repository.UserRepository,
 		notificationStream: notificationStream,
 		eventEmitter:       eventEmitter,
 	}
+}
+
+func (u *userService) DeleteUser(req *dto.DeleteUserRequest, userId string) error {
+	//  [IMPROVE] -> send email for delete verification
+	user, err := u.userRepository.QueryUserByUserId(userId)
+	if err != nil {
+		u.logger.Error().Err(err).Msg("failed to get user by it's userid")
+		return err
+	}
+	ok := utils.HashPasswordCompare(req.Password, user.Password)
+	if !ok {
+		u.logger.Error().Err(dto.Err_UNAUTHORIZED_PASSWORD_WRONG)
+		return dto.Err_UNAUTHORIZED_PASSWORD_WRONG
+	}
+	if err := u.userRepository.DeleteUser(userId); err != nil {
+		u.logger.Error().Err(err).Msg("failed to delete user")
+		return err
+	}
+	return nil
 }
 
 func (u *userService) UpdatePassword(req *dto.UpdatePasswordRequest, userId string) error {

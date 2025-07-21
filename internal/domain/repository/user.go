@@ -18,6 +18,7 @@ type (
 		QueryUserByEmail(string) (*model.User, error)
 		QueryUserByUserId(string) (*model.User, error)
 		UpdateUser(*model.User) error
+		DeleteUser(userId string) error
 	}
 	userRepository struct {
 		pgx    _db.Querier
@@ -30,6 +31,29 @@ func NewUserRepository(pgx _db.Querier, logger zerolog.Logger) UserRepository {
 		pgx:    pgx,
 		logger: logger,
 	}
+}
+
+func (a *userRepository) DeleteUser(userId string) error {
+	// [IMRPOVE] change to soft delete
+	query, args, err := sq.Delete("users").
+		Where(sq.Eq{"id": userId}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+	if err != nil {
+		a.logger.Error().Err(err).Msg("failed to build delete query")
+		return dto.Err_INTERNAL_FAILED_BUILD_QUERY
+	}
+
+	cmdTag, err := a.pgx.Exec(context.Background(), query, args...)
+	if err != nil {
+		a.logger.Error().Err(err).Msg("failed to delete user")
+		return dto.Err_INTERNAL_FAILED_DELETE_USER
+	}
+	if cmdTag.RowsAffected() == 0 {
+		a.logger.Warn().Str("id", userId).Msg("user not found for delete")
+		return dto.Err_NOTFOUND_USER_NOT_FOUND
+	}
+	return nil
 }
 
 func (a *userRepository) UpdateUser(user *model.User) error {

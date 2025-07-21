@@ -7,6 +7,7 @@ var (
 	SUCCESS_UPDATE_PROFILE  = "success update profile data"
 	SUCCESS_UPDATE_EMAIL    = "verify to change email"
 	SUCCESS_UPDATE_PASSWORD = "success update password"
+	SUCCESS_DELETE_USER     = "success delete user"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 	Err_INTERNAL_FAILED_SCAN_USER   = errors.New("failed to scan user")
 	Err_INTERNAL_FAILED_INSERT_USER = errors.New("failed to insert user")
 	Err_INTERNAL_FAILED_UPDATE_USER = errors.New("failed to update user")
+	Err_INTERNAL_FAILED_DELETE_USER = errors.New("failed to delete user")
 	Err_INTERNAL_CONVERT_IMAGE      = errors.New("error processing image")
 	Err_INTERNAL_GENERATE_TOKEN     = errors.New("error generate verification token")
 	Err_INTERNAL_GET_RESOURCE       = errors.New("failed to get resource")

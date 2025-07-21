@@ -20,4 +20,7 @@ type (
 		NewPassword        string `json:"new_password" binding:"required,min=6"`
 		ConfirmNewPassword string `json:"confirm_new_password" binding:"required,min=6"`
 	}
+	DeleteUserRequest struct {
+		Password string `json:"password" binding:"required,min=6"`
+	}
 )
