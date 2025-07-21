@@ -28,3 +28,8 @@ func (m *UserServiceMock) UpdatePassword(req *dto.UpdatePasswordRequest, userId 
 	args := m.Called(req, userId)
 	return args.Error(0)
 }
+
+func (m *UserServiceMock) DeleteUser(req *dto.DeleteUserRequest, userId string) error {
+	args := m.Called(req, userId)
+	return args.Error(0)
+}

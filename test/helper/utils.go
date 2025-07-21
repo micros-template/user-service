@@ -14,6 +14,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -144,4 +147,33 @@ func RetrieveDataFromEmail(email, regex, types string, t *testing.T) string {
 
 	assert.True(t, emailFound && link != "", "No matching email content found for "+email+" after waiting")
 	return link
+}
+
+type Claims struct {
+	UserId string `json:"user_id"`
+	jwt.RegisteredClaims
+}
+
+func GenerateToken(userId string, timeDuration time.Duration) (string, *Claims, error) {
+	jwtKey := []byte(viper.GetString("jwt.secret_key"))
+	var expirationTime *jwt.NumericDate
+	if timeDuration > 0 {
+		expirationTime = jwt.NewNumericDate(time.Now().Add(timeDuration))
+	}
+
+	claims := &Claims{
+		UserId: userId,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: expirationTime,
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    viper.GetString("app.name"),
+			ID:        uuid.NewString(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", nil, err
+	}
+	return signed, claims, nil
 }
