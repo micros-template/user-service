@@ -8,9 +8,9 @@ type (
 	}
 
 	UpdateUserRequest struct {
-		FullName         string                `form:"full_name" binding:"required,min=1,max=100"`
-		Image            *multipart.FileHeader `form:"image"`
-		TwoFactorEnabled bool                  `form:"two_factor_enabled"`
+		FullName         string                `form:"full_name" binding:"required,min=1,max=100" example:"john doe"`
+		Image            *multipart.FileHeader `form:"image" swaggerignore:"true"`
+		TwoFactorEnabled bool                  `form:"two_factor_enabled" example:"true"`
 	}
 	UpdateEmailRequest struct {
 		Email string `json:"email" binding:"required,email"`

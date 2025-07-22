@@ -1,0 +1,378 @@
+basePath: /api/v1/user
+definitions:
+  dto.ChangeEmailSuccessExample:
+    properties:
+      data:
+        example: "null"
+        type: string
+      message:
+        example: verify to change email
+        type: string
+      status_code:
+        example: 200
+        type: integer
+    type: object
+  dto.ChangePasswordSuccessExample:
+    properties:
+      data:
+        example: "null"
+        type: string
+      message:
+        example: success delete user
+        type: string
+      status_code:
+        example: 200
+        type: integer
+    type: object
+  dto.DeleteUserRequest:
+    properties:
+      password:
+        minLength: 6
+        type: string
+    required:
+    - password
+    type: object
+  dto.DeleteUserSuccessExample:
+    properties:
+      data:
+        example: "null"
+        type: string
+      message:
+        example: success delete user
+        type: string
+      status_code:
+        example: 200
+        type: integer
+    type: object
+  dto.GetProfileResponse:
+    properties:
+      email:
+        example: john.doe@example.com
+        type: string
+      full_name:
+        example: John Doe
+        type: string
+      image:
+        example: https://example.com/image.jpg
+        type: string
+      two_factor_enabled:
+        example: false
+        type: boolean
+      verified:
+        example: true
+        type: boolean
+    type: object
+  dto.GetProfileSuccessExample:
+    properties:
+      data:
+        $ref: '#/definitions/dto.GetProfileResponse'
+      message:
+        example: success get profile data
+        type: string
+      status_code:
+        example: 200
+        type: integer
+    type: object
+  dto.GlobalInternalServerErrorExample:
+    properties:
+      message:
+        example: internal server error
+        type: string
+      status_code:
+        example: 500
+        type: integer
+    type: object
+  dto.GlobalInvalidInputExample:
+    properties:
+      message:
+        example: invalid input
+        type: string
+      status_code:
+        example: 400
+        type: integer
+    type: object
+  dto.GlobalUnauthorizedErrorExample:
+    properties:
+      message:
+        example: unauthorized
+        type: string
+      status_code:
+        example: 401
+        type: integer
+    type: object
+  dto.GlobalUserNotFoundExample:
+    properties:
+      message:
+        example: user not found
+        type: string
+      status_code:
+        example: 404
+        type: integer
+    type: object
+  dto.UpdateEmailRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  dto.UpdatePasswordRequest:
+    properties:
+      confirm_new_password:
+        minLength: 6
+        type: string
+      new_password:
+        minLength: 6
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - confirm_new_password
+    - new_password
+    - password
+    type: object
+  dto.UpdateUserSuccessExample:
+    properties:
+      data:
+        example: "null"
+        type: string
+      message:
+        example: success update profile data
+        type: string
+      status_code:
+        example: 200
+        type: integer
+    type: object
+host: localhost:8081
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: User service API for operation related to user
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: User Service API
+  version: "1.0"
+paths:
+  /:
+    delete:
+      consumes:
+      - application/json
+      description: Delete User based on its ID (from token)
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Body Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DeleteUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delete User Success
+          schema:
+            $ref: '#/definitions/dto.DeleteUserSuccessExample'
+        "400":
+          description: Bad request - invalid input, password and confirm_password
+            doesn't match
+          schema:
+            $ref: '#/definitions/dto.GlobalInvalidInputExample'
+        "401":
+          description: Unauthorized - token invalid, wrong password
+          schema:
+            $ref: '#/definitions/dto.GlobalUnauthorizedErrorExample'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.GlobalUserNotFoundExample'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.GlobalInternalServerErrorExample'
+      summary: Delete User
+      tags:
+      - User-Service
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Update User based on its ID (from token)
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Profile image
+        in: formData
+        name: image
+        type: file
+      - example: john doe
+        in: formData
+        maxLength: 100
+        minLength: 1
+        name: full_name
+        required: true
+        type: string
+      - example: true
+        in: formData
+        name: two_factor_enabled
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Update user Success
+          schema:
+            $ref: '#/definitions/dto.UpdateUserSuccessExample'
+        "400":
+          description: Bad request - invalid input, wrong image extension, and limit
+            image exceeded
+          schema:
+            $ref: '#/definitions/dto.GlobalInvalidInputExample'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.GlobalUnauthorizedErrorExample'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.GlobalUserNotFoundExample'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.GlobalInternalServerErrorExample'
+      summary: Update User
+      tags:
+      - User-Service
+  /email:
+    patch:
+      consumes:
+      - application/json
+      description: Change Email based on its ID (from token)
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Body Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Change Email Success - need verification in auth API
+          schema:
+            $ref: '#/definitions/dto.ChangeEmailSuccessExample'
+        "400":
+          description: Bad request - invalid input
+          schema:
+            $ref: '#/definitions/dto.GlobalInvalidInputExample'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.GlobalUnauthorizedErrorExample'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.GlobalInternalServerErrorExample'
+      summary: Change Email
+      tags:
+      - User-Service
+  /me:
+    get:
+      consumes:
+      - '*/*'
+      description: Get profile User based on its ID (from token)
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Get Profile Success
+          schema:
+            $ref: '#/definitions/dto.GetProfileSuccessExample'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.GlobalUnauthorizedErrorExample'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.GlobalUserNotFoundExample'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.GlobalInternalServerErrorExample'
+      summary: Get User Profile
+      tags:
+      - User-Service
+  /password:
+    patch:
+      consumes:
+      - application/json
+      description: Change Password based on its ID (from token)
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Body Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Change Password Success
+          schema:
+            $ref: '#/definitions/dto.ChangePasswordSuccessExample'
+        "400":
+          description: Bad request - invalid input, password and confirm_password
+            doesn't match
+          schema:
+            $ref: '#/definitions/dto.GlobalInvalidInputExample'
+        "401":
+          description: Unauthorized - token invalid, wrong password
+          schema:
+            $ref: '#/definitions/dto.GlobalUnauthorizedErrorExample'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/dto.GlobalUserNotFoundExample'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.GlobalInternalServerErrorExample'
+      summary: Change Password
+      tags:
+      - User-Service
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

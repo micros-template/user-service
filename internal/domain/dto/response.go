@@ -36,10 +36,54 @@ var (
 
 type (
 	GetProfileResponse struct {
-		FullName         string  `json:"full_name"`
-		Image            *string `json:"image"`
-		Email            string  `json:"email"`
-		Verified         bool    `json:"verified"`
-		TwoFactorEnabled bool    `json:"two_factor_enabled"`
+		FullName         string  `json:"full_name" example:"John Doe"`
+		Image            *string `json:"image" example:"https://example.com/image.jpg"`
+		Email            string  `json:"email" example:"john.doe@example.com"`
+		Verified         bool    `json:"verified" example:"true"`
+		TwoFactorEnabled bool    `json:"two_factor_enabled" example:"false"`
+	}
+
+	GlobalInternalServerErrorExample struct {
+		StatusCode uint16 `json:"status_code" example:"500"`
+		Message    string `json:"message" example:"internal server error"`
+	}
+	GlobalUserNotFoundExample struct {
+		StatusCode uint16 `json:"status_code" example:"404"`
+		Message    string `json:"message" example:"user not found"`
+	}
+
+	GlobalUnauthorizedErrorExample struct {
+		StatusCode uint16 `json:"status_code" example:"401"`
+		Message    string `json:"message" example:"unauthorized"`
+	}
+	GlobalInvalidInputExample struct {
+		StatusCode uint16 `json:"status_code" example:"400"`
+		Message    string `json:"message" example:"invalid input"`
+	}
+	GetProfileSuccessExample struct {
+		StatusCode uint16             `json:"status_code" example:"200"`
+		Message    string             `json:"message" example:"success get profile data"`
+		Data       GetProfileResponse `json:"data"`
+	}
+	UpdateUserSuccessExample struct {
+		StatusCode uint16 `json:"status_code" example:"200"`
+		Message    string `json:"message" example:"success update profile data"`
+		Data       string `json:"data" example:"null"`
+	}
+
+	ChangeEmailSuccessExample struct {
+		StatusCode uint16 `json:"status_code" example:"200"`
+		Message    string `json:"message" example:"verify to change email"`
+		Data       string `json:"data" example:"null"`
+	}
+	ChangePasswordSuccessExample struct {
+		StatusCode uint16 `json:"status_code" example:"200"`
+		Message    string `json:"message" example:"success delete user"`
+		Data       string `json:"data" example:"null"`
+	}
+	DeleteUserSuccessExample struct {
+		StatusCode uint16 `json:"status_code" example:"200"`
+		Message    string `json:"message" example:"success delete user"`
+		Data       string `json:"data" example:"null"`
 	}
 )

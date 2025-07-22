@@ -33,6 +33,19 @@ func NewUserHandler(userService service.UserService, logger zerolog.Logger) User
 	}
 }
 
+// @Summary Delete User
+// @Description Delete User based on its ID (from token)
+// @Tags User-Service
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param request body dto.DeleteUserRequest true "Body Request"
+// @Success 200 {object} dto.DeleteUserSuccessExample "Delete User Success"
+// @Failure 400 {object} dto.GlobalInvalidInputExample "Bad request - invalid input, password and confirm_password doesn't match"
+// @Failure 401 {object} dto.GlobalUnauthorizedErrorExample "Unauthorized - token invalid, wrong password"
+// @Failure 404 {object} dto.GlobalUserNotFoundExample "User not found"
+// @Failure 500 {object} dto.GlobalInternalServerErrorExample "Internal server error"
+// @Router / [delete]
 func (u *userHandler) DeleteUser(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
@@ -67,6 +80,19 @@ func (u *userHandler) DeleteUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// @Summary Change Password
+// @Description Change Password based on its ID (from token)
+// @Tags User-Service
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param request body dto.UpdatePasswordRequest true "Body Request"
+// @Success 200 {object} dto.ChangePasswordSuccessExample "Change Password Success"
+// @Failure 400 {object} dto.GlobalInvalidInputExample "Bad request - invalid input, password and confirm_password doesn't match"
+// @Failure 401 {object} dto.GlobalUnauthorizedErrorExample "Unauthorized - token invalid, wrong password"
+// @Failure 404 {object} dto.GlobalUserNotFoundExample "User not found"
+// @Failure 500 {object} dto.GlobalInternalServerErrorExample "Internal server error"
+// @Router /password [patch]
 func (u *userHandler) ChangePassword(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
@@ -106,6 +132,18 @@ func (u *userHandler) ChangePassword(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// @Summary Change Email
+// @Description Change Email based on its ID (from token)
+// @Tags User-Service
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param request body dto.UpdateEmailRequest true "Body Request"
+// @Success 200 {object} dto.ChangeEmailSuccessExample "Change Email Success - need verification in auth API"
+// @Failure 400 {object} dto.GlobalInvalidInputExample "Bad request - invalid input"
+// @Failure 401 {object} dto.GlobalUnauthorizedErrorExample "Unauthorized"
+// @Failure 500 {object} dto.GlobalInternalServerErrorExample "Internal server error"
+// @Router /email [patch]
 func (u *userHandler) ChangeEmail(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
@@ -131,6 +169,20 @@ func (u *userHandler) ChangeEmail(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// @Summary Update User
+// @Description Update User based on its ID (from token)
+// @Tags User-Service
+// @Accept multipart/form-data
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Param image formData file false "Profile image"
+// @Param request formData dto.UpdateUserRequest true "Body Request"
+// @Success 200 {object} dto.UpdateUserSuccessExample "Update user Success"
+// @Failure 400 {object} dto.GlobalInvalidInputExample "Bad request - invalid input, wrong image extension, and limit image exceeded"
+// @Failure 401 {object} dto.GlobalUnauthorizedErrorExample "Unauthorized"
+// @Failure 404 {object} dto.GlobalUserNotFoundExample "User not found"
+// @Failure 500 {object} dto.GlobalInternalServerErrorExample "Internal server error"
+// @Router / [patch]
 func (u *userHandler) UpdateUser(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
@@ -177,6 +229,17 @@ func (u *userHandler) UpdateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+// @Summary Get User Profile
+// @Description Get profile User based on its ID (from token)
+// @Tags User-Service
+// @Accept */*
+// @Produce json
+// @Param Authorization header string true "Bearer token"
+// @Success 200 {object} dto.GetProfileSuccessExample "Get Profile Success"
+// @Failure 401 {object} dto.GlobalUnauthorizedErrorExample "Unauthorized"
+// @Failure 404 {object} dto.GlobalUserNotFoundExample "User not found
+// @Failure 500 {object} dto.GlobalInternalServerErrorExample "Internal server error
+// @Router /me [get]
 func (u *userHandler) GetProfile(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
