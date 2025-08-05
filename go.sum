@@ -4,8 +4,8 @@
 10.1.20.130/dropping/proto-file v0.0.0-20250714044208-bb76fb12882b/go.mod h1:/sBTYRQCrElphtxKlj18NzSFelztTejpr1cclU11lzs=
 10.1.20.130/dropping/proto-user v0.0.0-20250714041933-087deb5804ce h1:1gDoNMb5xhm0cwmLCOa0l0LQJuE0tNRGDsFraU6TlFU=
 10.1.20.130/dropping/proto-user v0.0.0-20250714041933-087deb5804ce/go.mod h1:+WYk4dKj3PHnWFZmVKVpzLplnOvpkhOaDbrRin8hQUY=
-10.1.20.130/dropping/sharedlib v0.0.0-20250717013852-0ea07e8dc666 h1:fDmXUZ2o5K1b4WK8ZoANTOq2lM4BdwzPFgh0aiCbbvk=
-10.1.20.130/dropping/sharedlib v0.0.0-20250717013852-0ea07e8dc666/go.mod h1:FNCczS4D2LXjPZVPekQloDB6DH4e5EYMf/KpouhTKxM=
+10.1.20.130/dropping/sharedlib v0.0.0-20250805050028-236deaaadc24 h1:+0nq6fvl0RFQsSTVseRAxUiqYzDAYw3T5rN5rpyUEXY=
+10.1.20.130/dropping/sharedlib v0.0.0-20250805050028-236deaaadc24/go.mod h1:FNCczS4D2LXjPZVPekQloDB6DH4e5EYMf/KpouhTKxM=
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
 dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 h1:He8afgbRMd7mFxO99hRNu+6tazq8nFF9lIwo9JFroBk=

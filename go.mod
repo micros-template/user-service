@@ -31,7 +31,7 @@ replace (
 	github.com/dropboks/event-bus-client => 10.1.20.130/dropping/event-bus-client v0.0.0-20250714041347-ca084f97e210
 	github.com/dropboks/proto-file => 10.1.20.130/dropping/proto-file v0.0.0-20250714044208-bb76fb12882b
 	github.com/dropboks/proto-user => 10.1.20.130/dropping/proto-user v0.0.0-20250714041933-087deb5804ce
-	github.com/dropboks/sharedlib => 10.1.20.130/dropping/sharedlib v0.0.0-20250717013852-0ea07e8dc666
+	github.com/dropboks/sharedlib => 10.1.20.130/dropping/sharedlib v0.0.0-20250805050028-236deaaadc24
 )
 
 require (
