@@ -17,7 +17,7 @@ app:
       file_service: file_service:50051
   verification_url: "verify-email?"
   auth_url: "http://10.1.20.130:81/api/v1"
-  
+
 redis:
   address: "redis"
   port: "6379"
@@ -36,19 +36,19 @@ nats:
 
 jetstream:
   notification:
-    stream: 
+    stream:
       name: "notification_stream"
       description: "this is notification stream"
     subject:
       global: "notification.>"
       mail: "notification.email"
   event:
-    stream: 
-      name: "event_stream"
+    stream:
+      name: "eventbus_stream"
       description: "this is event bus stream"
     subject:
-      global: "event.>"
-      event_bus: "event"
+      global: "eventbus.>"
+      event_bus: "eventbus"
 
 server:
   cors:
