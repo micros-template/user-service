@@ -39,7 +39,7 @@ func BuildContainer() *dig.Container {
 	if err := container.Provide(mq.NewJetstream); err != nil {
 		panic("Failed to provide jetstream instance: " + err.Error())
 	}
-	// jetstream infrastructure
+	// nats infrastructure
 	if err := container.Provide(_mq.NewNatsInfrastructure); err != nil {
 		panic("Failed to provide nats infrastructure: " + err.Error())
 	}
