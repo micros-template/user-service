@@ -3,6 +3,7 @@ package di
 import (
 	"10.1.20.130/dropping/user-service/config/cache"
 	db "10.1.20.130/dropping/user-service/config/database"
+	logemitter "10.1.20.130/dropping/user-service/config/log_emitter"
 	"10.1.20.130/dropping/user-service/config/logger"
 	mq "10.1.20.130/dropping/user-service/config/message-queue"
 	"10.1.20.130/dropping/user-service/config/router"
@@ -82,6 +83,9 @@ func BuildContainer() *dig.Container {
 	// user_handler
 	if err := container.Provide(handler.NewUserHandler); err != nil {
 		panic("Failed to provide user handler: " + err.Error())
+	}
+	if err := container.Provide(logemitter.NewInfraLogEmitter); err != nil {
+		panic("Failed to provide log emitter: " + err.Error())
 	}
 	if err := container.Provide(router.NewHTTP); err != nil {
 		panic("Failed to provide HTTP Server: " + err.Error())
