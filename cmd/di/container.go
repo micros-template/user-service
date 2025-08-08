@@ -12,9 +12,9 @@ import (
 	"10.1.20.130/dropping/user-service/internal/domain/service"
 	_cache "10.1.20.130/dropping/user-service/internal/infrastructure/cache"
 	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
+	"10.1.20.130/dropping/user-service/internal/infrastructure/eventbus"
 	"10.1.20.130/dropping/user-service/internal/infrastructure/grpc"
 	_mq "10.1.20.130/dropping/user-service/internal/infrastructure/message-queue"
-	"github.com/dropboks/event-bus-client/pkg/event"
 	"go.uber.org/dig"
 )
 
@@ -44,8 +44,12 @@ func BuildContainer() *dig.Container {
 	if err := container.Provide(_mq.NewNatsInfrastructure); err != nil {
 		panic("Failed to provide nats infrastructure: " + err.Error())
 	}
+	// log emitter
+	if err := container.Provide(logemitter.NewInfraLogEmitter); err != nil {
+		panic("Failed to provide log emitter: " + err.Error())
+	}
 	// event emitter
-	if err := container.Provide(event.NewEmitter); err != nil {
+	if err := container.Provide(eventbus.NewEventBusEmitterInfra); err != nil {
 		panic("Failed to provide event bus emitter: " + err.Error())
 	}
 	// redis connection
@@ -83,9 +87,6 @@ func BuildContainer() *dig.Container {
 	// user_handler
 	if err := container.Provide(handler.NewUserHandler); err != nil {
 		panic("Failed to provide user handler: " + err.Error())
-	}
-	if err := container.Provide(logemitter.NewInfraLogEmitter); err != nil {
-		panic("Failed to provide log emitter: " + err.Error())
 	}
 	if err := container.Provide(router.NewHTTP); err != nil {
 		panic("Failed to provide HTTP Server: " + err.Error())
