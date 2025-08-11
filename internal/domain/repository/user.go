@@ -3,9 +3,12 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"10.1.20.130/dropping/log-management/pkg"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
+	"10.1.20.130/dropping/user-service/pkg/utils"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/dropboks/sharedlib/model"
 	"github.com/jackc/pgx/v5"
@@ -15,21 +18,24 @@ import (
 type (
 	UserRepository interface {
 		CreateNewUser(*model.User) error
-		QueryUserByEmail(string) (*model.User, error)
 		QueryUserByUserId(string) (*model.User, error)
 		UpdateUser(*model.User) error
 		DeleteUser(userId string) error
 	}
 	userRepository struct {
-		pgx    _db.Querier
-		logger zerolog.Logger
+		pgx        _db.Querier
+		logger     zerolog.Logger
+		logEmitter pkg.LogEmitter
+		util       utils.UserServiceUtil
 	}
 )
 
-func NewUserRepository(pgx _db.Querier, logger zerolog.Logger) UserRepository {
+func NewUserRepository(pgx _db.Querier, logEmitter pkg.LogEmitter, util utils.UserServiceUtil, logger zerolog.Logger) UserRepository {
 	return &userRepository{
-		pgx:    pgx,
-		logger: logger,
+		pgx:        pgx,
+		logger:     logger,
+		logEmitter: logEmitter,
+		util:       util,
 	}
 }
 
@@ -40,17 +46,29 @@ func (a *userRepository) DeleteUser(userId string) error {
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		a.logger.Error().Err(err).Msg("failed to build delete query")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_FAILED_BUILD_QUERY
 	}
 
 	cmdTag, err := a.pgx.Exec(context.Background(), query, args...)
 	if err != nil {
-		a.logger.Error().Err(err).Msg("failed to delete user")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_FAILED_DELETE_USER.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_FAILED_DELETE_USER
 	}
 	if cmdTag.RowsAffected() == 0 {
-		a.logger.Warn().Str("id", userId).Msg("user not found for delete")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", fmt.Sprintf("%s. user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), userId)); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_NOTFOUND_USER_NOT_FOUND
 	}
 	return nil
@@ -69,17 +87,29 @@ func (a *userRepository) UpdateUser(user *model.User) error {
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		a.logger.Error().Err(err).Msg("failed to build update query")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_FAILED_BUILD_QUERY
 	}
 
 	cmdTag, err := a.pgx.Exec(context.Background(), query, args...)
 	if err != nil {
-		a.logger.Error().Err(err).Msg("failed to update user")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_FAILED_UPDATE_USER.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_FAILED_UPDATE_USER
 	}
 	if cmdTag.RowsAffected() == 0 {
-		a.logger.Warn().Str("id", user.ID).Msg("user not found for update")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", fmt.Sprintf("%s. user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), user.ID)); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_NOTFOUND_USER_NOT_FOUND
 	}
 	return nil
@@ -93,12 +123,20 @@ func (a *userRepository) CreateNewUser(user *model.User) error {
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		a.logger.Error().Err(err).Msg("failed to build insert query")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_FAILED_BUILD_QUERY
 	}
 	row := a.pgx.QueryRow(context.Background(), query, args...)
 	if err := row.Scan(&user.ID); err != nil {
-		a.logger.Error().Err(err).Msg("failed to insert user")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_FAILED_INSERT_USER.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_FAILED_INSERT_USER
 	}
 	return nil
@@ -112,7 +150,11 @@ func (a *userRepository) QueryUserByUserId(userId string) (*model.User, error) {
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
 	if err != nil {
-		a.logger.Error().Err(err).Msg("failed to build query")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return nil, dto.Err_INTERNAL_FAILED_BUILD_QUERY
 	}
 	row := a.pgx.QueryRow(context.Background(), query, args...)
@@ -120,37 +162,20 @@ func (a *userRepository) QueryUserByUserId(userId string) (*model.User, error) {
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			a.logger.Warn().Str("id", userId).Msg("user not found")
+			go func() {
+				if err := a.util.EmitLog(a.logEmitter, "WARN", fmt.Sprintf("%s user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), userId)); err != nil {
+					a.logger.Error().Err(err).Msg("failed to emit log")
+				}
+			}()
 			return nil, dto.Err_NOTFOUND_USER_NOT_FOUND
 		}
-		a.logger.Error().Err(err).Msg("failed to scan user")
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_FAILED_SCAN_USER.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return nil, dto.Err_INTERNAL_FAILED_SCAN_USER
 	}
 	return &user, nil
 
-}
-
-func (a *userRepository) QueryUserByEmail(email string) (*model.User, error) {
-	var user model.User
-	query, args, err := sq.Select("id", "full_name", "image", "email", "password", "verified", "two_factor_enabled").
-		From("users").
-		Where(sq.Eq{"email": email}).
-		PlaceholderFormat(sq.Dollar).
-		ToSql()
-	if err != nil {
-		a.logger.Error().Err(err).Msg("failed to build query")
-		return nil, dto.Err_INTERNAL_FAILED_BUILD_QUERY
-	}
-
-	row := a.pgx.QueryRow(context.Background(), query, args...)
-	err = row.Scan(&user.ID, &user.FullName, &user.Image, &user.Email, &user.Password, &user.Verified, &user.TwoFactorEnabled)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			a.logger.Warn().Str("email", email).Msg("user not found")
-			return nil, dto.Err_NOTFOUND_USER_NOT_FOUND
-		}
-		a.logger.Error().Err(err).Msg("failed to scan user")
-		return nil, dto.Err_INTERNAL_FAILED_SCAN_USER
-	}
-	return &user, nil
 }

@@ -2,13 +2,15 @@ package service_test
 
 import (
 	"bytes"
+	"log"
 	"mime/multipart"
 	"testing"
 	"time"
 
+	"10.1.20.130/dropping/log-management/pkg/mocks"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/service"
-	"10.1.20.130/dropping/user-service/test/mocks"
+	mk "10.1.20.130/dropping/user-service/test/mocks"
 	"github.com/dropboks/proto-file/pkg/fpb"
 	"github.com/dropboks/sharedlib/model"
 	"github.com/rs/zerolog"
@@ -21,30 +23,32 @@ import (
 type UpdateUserUserServiceSuite struct {
 	suite.Suite
 	userService        service.UserService
-	userRepository     *mocks.UserRepositoryMock
-	eventEmitter       *mocks.EmitterMock
-	fileService        *mocks.MockFileServiceClient
-	notificationStream *mocks.MockNatsInfra
-	redisRepository    *mocks.MockRedisRepository
+	userRepository     *mk.UserRepositoryMock
+	eventEmitter       *mk.EmitterMock
+	fileService        *mk.MockFileServiceClient
+	notificationStream *mk.MockNatsInfra
+	redisRepository    *mk.MockRedisRepository
+	mockUtil           *mk.UserServiceUtilMock
 }
 
 func (u *UpdateUserUserServiceSuite) SetupSuite() {
 
-	mockUserRepo := new(mocks.UserRepositoryMock)
-	mockEventEmitter := new(mocks.EmitterMock)
-	mockFileService := new(mocks.MockFileServiceClient)
-	mockNotificationStream := new(mocks.MockNatsInfra)
-	mockRedisRepository := new(mocks.MockRedisRepository)
+	mockUserRepo := new(mk.UserRepositoryMock)
+	mockEventEmitter := new(mk.EmitterMock)
+	mockFileService := new(mk.MockFileServiceClient)
+	mockNotificationStream := new(mk.MockNatsInfra)
+	mockRedisRepository := new(mk.MockRedisRepository)
+	mockUserServiceUtil := new(mk.UserServiceUtilMock)
+	mockLogEmitter := new(mocks.LogEmitterMock)
 
 	logger := zerolog.Nop()
-	// logger := zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger()
-
 	u.userRepository = mockUserRepo
 	u.eventEmitter = mockEventEmitter
 	u.fileService = mockFileService
 	u.notificationStream = mockNotificationStream
 	u.redisRepository = mockRedisRepository
-	u.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter)
+	u.mockUtil = mockUserServiceUtil
+	u.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter, u.mockUtil)
 }
 
 func (u *UpdateUserUserServiceSuite) SetupTest() {
@@ -53,13 +57,14 @@ func (u *UpdateUserUserServiceSuite) SetupTest() {
 	u.fileService.ExpectedCalls = nil
 	u.notificationStream.ExpectedCalls = nil
 	u.redisRepository.ExpectedCalls = nil
+	u.mockUtil.ExpectedCalls = nil
 
 	u.userRepository.Calls = nil
 	u.eventEmitter.Calls = nil
 	u.fileService.Calls = nil
 	u.notificationStream.Calls = nil
 	u.redisRepository.Calls = nil
-
+	u.mockUtil.Calls = nil
 }
 
 func TestUpdateUserUserServiceSuite(t *testing.T) {
@@ -71,16 +76,17 @@ func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_Success() {
 	req := &dto.UpdateUserRequest{
 		FullName:         "Updated Name",
 		TwoFactorEnabled: true,
+		Image:            nil,
 	}
 	user := &model.User{
 		ID:               userId,
 		FullName:         "Original Name",
 		TwoFactorEnabled: false,
+		Image:            nil,
 	}
 	u.userRepository.On("QueryUserByUserId", userId).Return(user, nil)
 	u.userRepository.On("UpdateUser", mock.Anything).Return(nil)
 	u.eventEmitter.On("UpdateUser", mock.Anything, mock.AnythingOfType("*upb.User")).Return(nil).Maybe()
-
 	err := u.userService.UpdateUser(req, userId)
 
 	u.NoError(err)
@@ -115,12 +121,51 @@ func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_InvalidImageExte
 		ID: userId,
 	}
 	u.userRepository.On("QueryUserByUserId", userId).Return(user, nil)
+	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdateUser(req, userId)
 
 	u.Error(err)
 	u.Equal(dto.Err_BAD_REQUEST_WRONG_EXTENSION, err)
 	u.userRepository.AssertExpectations(u.T())
+
+	time.Sleep(time.Second)
+	u.mockUtil.AssertExpectations(u.T())
+}
+
+func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_SizeLimitExceeded() {
+	imageData := bytes.Repeat([]byte("test"), 8*1024*1024)
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	part, _ := writer.CreateFormFile("image", "test_image.jpg")
+	if _, err := part.Write(imageData); err != nil {
+		log.Fatal("failed to write image data:", err)
+	}
+	if err := writer.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
+
+	reader := multipart.NewReader(&buf, writer.Boundary())
+	form, _ := reader.ReadForm(32 << 20)
+	fileHeader := form.File["image"][0]
+	userId := "user-123"
+	req := &dto.UpdateUserRequest{
+		Image: fileHeader,
+	}
+	user := &model.User{
+		ID: userId,
+	}
+	u.userRepository.On("QueryUserByUserId", userId).Return(user, nil)
+	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+
+	err := u.userService.UpdateUser(req, userId)
+
+	u.Error(err)
+	u.Equal(dto.Err_BAD_REQUEST_LIMIT_SIZE_EXCEEDED, err)
+	u.userRepository.AssertExpectations(u.T())
+
+	time.Sleep(time.Second)
+	u.mockUtil.AssertExpectations(u.T())
 }
 
 func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_ImageUploadError() {
@@ -150,10 +195,14 @@ func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_ImageUploadError
 		Ext:   "jpg",
 	}
 	u.fileService.On("SaveProfileImage", mock.Anything, imageReq).Return(nil, status.Errorf(codes.Internal, "upload error"))
+	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdateUser(req, userId)
 
 	u.Error(err)
 	u.userRepository.AssertExpectations(u.T())
 	u.fileService.AssertExpectations(u.T())
+
+	time.Sleep(time.Second)
+	u.mockUtil.AssertExpectations(u.T())
 }

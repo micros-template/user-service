@@ -2,6 +2,10 @@
 10.1.20.130/dropping/event-bus-client v0.0.0-20250808061922-4a60fc1ec26c/go.mod h1:mWKYkasDxsNlmv8vUCIcI515i1VVhveZLqJ6HmoLx4A=
 10.1.20.130/dropping/log-management v0.0.0-20250808031052-163cba810167 h1:ggIGrayzR26D9kVEYVUocYm4LfdApsq9WJs+kEudp30=
 10.1.20.130/dropping/log-management v0.0.0-20250808031052-163cba810167/go.mod h1:ItjbqbcyRsCnR/bU7tY9Jsgw2QVM8gnYL4FGFBFl/LY=
+10.1.20.130/dropping/log-management v0.0.0-20250808065048-33b58fddd842 h1:e0/RRF1SVbLXa5n7OoYVDJPe5kl3JO05dWwFZBEh13o=
+10.1.20.130/dropping/log-management v0.0.0-20250808065048-33b58fddd842/go.mod h1:ItjbqbcyRsCnR/bU7tY9Jsgw2QVM8gnYL4FGFBFl/LY=
+10.1.20.130/dropping/log-management v0.0.0-20250808075433-1d4dd15b3fc7 h1:K2RplNav0GlQV3QbZqUoQdccQHnoukYMIxlx1AvhsO0=
+10.1.20.130/dropping/log-management v0.0.0-20250808075433-1d4dd15b3fc7/go.mod h1:QQuuPF+04g3OYJiIsXCAS/GN0Gm7tvVsJcy9YQ/tluA=
 10.1.20.130/dropping/proto-file v0.0.0-20250714044208-bb76fb12882b h1:YXwksoH9Kl8jocJlto5l+5C+qg/0Bh2GKIC6bkb7Fwo=
 10.1.20.130/dropping/proto-file v0.0.0-20250714044208-bb76fb12882b/go.mod h1:/sBTYRQCrElphtxKlj18NzSFelztTejpr1cclU11lzs=
 10.1.20.130/dropping/proto-user v0.0.0-20250714041933-087deb5804ce h1:1gDoNMb5xhm0cwmLCOa0l0LQJuE0tNRGDsFraU6TlFU=
@@ -285,6 +289,7 @@ go.opentelemetry.io/otel/trace v1.37.0 h1:HLdcFNbRQBE2imdSEgm/kwqmQj1Or1l/7bW6mx
 go.opentelemetry.io/otel/trace v1.37.0/go.mod h1:TlgrlQ+PtQO5XFerSPUYG0JSgGyryXewPGyayAWSBS0=
 go.opentelemetry.io/proto/otlp v1.7.0 h1:jX1VolD6nHuFzOYso2E73H85i92Mv8JQYk0K9vz09os=
 go.opentelemetry.io/proto/otlp v1.7.0/go.mod h1:fSKjH6YJ7HDlwzltzyMj036AJ3ejJLCgCSHGj4efDDo=
+go.opentelemetry.io/proto/otlp v1.7.1 h1:gTOMpGDb0WTBOP8JaO72iL3auEZhVmAQg4ipjOVAtj4=
 go.uber.org/dig v1.19.0 h1:BACLhebsYdpQ7IROQ1AGPjrXcP5dF80U3gKoFzbaq/4=
 go.uber.org/dig v1.19.0/go.mod h1:Us0rSJiThwCv2GteUN0Q7OKvU7n5J4dxZ9JKUXozFdE=
 golang.org/x/arch v0.20.0 h1:dx1zTU0MAE98U+TQ8BLl7XsJbgze2WnNKF/8tGp/Q6c=
@@ -359,6 +364,7 @@ golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 h1:oWVWY3NzT7KJppx2UKhKmzPq4SRe0LdCijVRwvGeikY=
 google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822/go.mod h1:h3c4v36UTKzUiuaOKQ6gr3S+0hovBtUrXzTG/i3+XEc=
+google.golang.org/genproto/googleapis/api v0.0.0-20250804133106-a7a43d27e69b h1:ULiyYQ0FdsJhwwZUwbaXpZF5yUE3h+RA+gxvBu37ucc=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b h1:zPKJod4w6F1+nRGDI9ubnXYhU9NSWoFAijkHkUXeTK8=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b/go.mod h1:qQ0YXyHHx3XkvlzUtpXDkS29lDSafHMZBAZDc03LQ3A=
 google.golang.org/grpc v1.74.2 h1:WoosgB65DlWVC9FqI82dGsZhWFNBSLjQ84bjROOpMu4=

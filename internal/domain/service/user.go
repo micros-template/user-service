@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"10.1.20.130/dropping/log-management/pkg"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/repository"
 	_mq "10.1.20.130/dropping/user-service/internal/infrastructure/message-queue"
 	"10.1.20.130/dropping/user-service/pkg/constant"
+	u "10.1.20.130/dropping/user-service/pkg/utils"
 	"github.com/dropboks/event-bus-client/pkg/event"
 	"github.com/dropboks/proto-file/pkg/fpb"
 	"github.com/dropboks/proto-user/pkg/upb"
@@ -35,6 +37,8 @@ type (
 		redisRepository    repository.RedisRepository
 		notificationStream _mq.Nats
 		eventEmitter       event.Emitter
+		logEmitter         pkg.LogEmitter
+		util               u.UserServiceUtil
 	}
 )
 
@@ -44,6 +48,8 @@ func NewUserService(userRepo repository.UserRepository,
 	redisRepository repository.RedisRepository,
 	notificationStream _mq.Nats,
 	eventEmitter event.Emitter,
+	logEmitter pkg.LogEmitter,
+	util u.UserServiceUtil,
 ) UserService {
 	return &userService{
 		userRepository:     userRepo,
@@ -52,6 +58,8 @@ func NewUserService(userRepo repository.UserRepository,
 		redisRepository:    redisRepository,
 		notificationStream: notificationStream,
 		eventEmitter:       eventEmitter,
+		logEmitter:         logEmitter,
+		util:               util,
 	}
 }
 
@@ -59,16 +67,18 @@ func (u *userService) DeleteUser(req *dto.DeleteUserRequest, userId string) erro
 	//  [IMPROVE] -> send email for delete verification
 	user, err := u.userRepository.QueryUserByUserId(userId)
 	if err != nil {
-		u.logger.Error().Err(err).Msg("failed to get user by it's userid")
 		return err
 	}
 	ok := utils.HashPasswordCompare(req.Password, user.Password)
 	if !ok {
-		u.logger.Error().Err(dto.Err_UNAUTHORIZED_PASSWORD_WRONG)
+		go func() {
+			if err := u.util.EmitLog(u.logEmitter, "ERR", dto.Err_UNAUTHORIZED_PASSWORD_WRONG.Error()); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_UNAUTHORIZED_PASSWORD_WRONG
 	}
 	if err := u.userRepository.DeleteUser(userId); err != nil {
-		u.logger.Error().Err(err).Msg("failed to delete user")
 		return err
 	}
 	return nil
@@ -76,6 +86,11 @@ func (u *userService) DeleteUser(req *dto.DeleteUserRequest, userId string) erro
 
 func (u *userService) UpdatePassword(req *dto.UpdatePasswordRequest, userId string) error {
 	if req.NewPassword != req.ConfirmNewPassword {
+		go func() {
+			if err := u.util.EmitLog(u.logEmitter, "ERR", dto.Err_BAD_REQUEST_PASSWORD_CONFIRM_PASSWORD_DOESNT_MATCH.Error()); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_BAD_REQUEST_PASSWORD_CONFIRM_PASSWORD_DOESNT_MATCH
 	}
 	user, err := u.userRepository.QueryUserByUserId(userId)
@@ -84,10 +99,20 @@ func (u *userService) UpdatePassword(req *dto.UpdatePasswordRequest, userId stri
 	}
 	ok := utils.HashPasswordCompare(req.Password, user.Password)
 	if !ok {
+		go func() {
+			if err := u.util.EmitLog(u.logEmitter, "ERR", dto.Err_UNAUTHORIZED_PASSWORD_WRONG.Error()); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_UNAUTHORIZED_PASSWORD_WRONG
 	}
 	newPassword, err := utils.HashPassword(req.NewPassword)
 	if err != nil {
+		go func() {
+			if err := u.util.EmitLog(u.logEmitter, "ERR", fmt.Sprintf("Hash Password Error: %v", err.Error())); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return err
 	}
 	us := *user
@@ -114,7 +139,11 @@ func (u *userService) UpdateEmail(req *dto.UpdateEmailRequest, userId string) er
 
 	verificationToken, err := utils.RandomString64()
 	if err != nil {
-		u.logger.Error().Err(err).Msg("error generate verification token")
+		go func() {
+			if err := u.util.EmitLog(u.logEmitter, "ERR", dto.Err_INTERNAL_GENERATE_TOKEN.Error()); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_GENERATE_TOKEN
 	}
 
@@ -137,12 +166,20 @@ func (u *userService) UpdateEmail(req *dto.UpdateEmailRequest, userId string) er
 	}
 	marshalledMsg, err := json.Marshal(msg)
 	if err != nil {
-		u.logger.Error().Err(err).Msg("marshal data error")
+		go func() {
+			if err := u.util.EmitLog(u.logEmitter, "ERR", "marshal data error"); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return err
 	}
 	_, err = u.notificationStream.Publish(ctx, subject, []byte(marshalledMsg))
 	if err != nil {
-		u.logger.Error().Err(err).Msg("publish notification error")
+		go func() {
+			if err := u.util.EmitLog(u.logEmitter, "ERR", dto.Err_INTERNAL_PUBLISH_MESSAGE.Error()); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_PUBLISH_MESSAGE
 	}
 	return nil
@@ -162,17 +199,32 @@ func (u *userService) UpdateUser(req *dto.UpdateUserRequest, userId string) erro
 		us.TwoFactorEnabled = req.TwoFactorEnabled
 	}
 	ctx := context.Background()
+
 	if req.Image != nil && req.Image.Filename != "" {
 		ext := utils.GetFileNameExtension(req.Image.Filename)
 		if ext != "jpg" && ext != "jpeg" && ext != "png" {
+			go func() {
+				if err := u.util.EmitLog(u.logEmitter, "ERR", dto.Err_BAD_REQUEST_WRONG_EXTENSION.Error()); err != nil {
+					u.logger.Error().Err(err).Msg("failed to emit log")
+				}
+			}()
 			return dto.Err_BAD_REQUEST_WRONG_EXTENSION
 		}
 		if req.Image.Size > constant.MAX_UPLOAD_SIZE {
+			go func() {
+				if err := u.util.EmitLog(u.logEmitter, "ERR", dto.Err_BAD_REQUEST_LIMIT_SIZE_EXCEEDED.Error()); err != nil {
+					u.logger.Error().Err(err).Msg("failed to emit log")
+				}
+			}()
 			return dto.Err_BAD_REQUEST_LIMIT_SIZE_EXCEEDED
 		}
 		image, err := utils.FileToByte(req.Image)
 		if err != nil {
-			u.logger.Error().Err(err).Msg("error converting image")
+			go func() {
+				if err := u.util.EmitLog(u.logEmitter, "ERR", "error converting image to byte"); err != nil {
+					u.logger.Error().Err(err).Msg("failed to emit log")
+				}
+			}()
 			return dto.Err_INTERNAL_CONVERT_IMAGE
 		}
 		imageReq := &fpb.Image{
@@ -181,7 +233,11 @@ func (u *userService) UpdateUser(req *dto.UpdateUserRequest, userId string) erro
 		}
 		resp, err := u.fileServiceClient.SaveProfileImage(ctx, imageReq)
 		if err != nil {
-			u.logger.Error().Err(err).Msg("Error uploading image to file service")
+			go func() {
+				if err := u.util.EmitLog(u.logEmitter, "ERR", fmt.Sprintf("Error uploading image to file service. err: %v", err.Error())); err != nil {
+					u.logger.Error().Err(err).Msg("failed to emit log")
+				}
+			}()
 			return err
 		}
 		us.Image = utils.StringPtr(resp.GetName())
@@ -189,10 +245,24 @@ func (u *userService) UpdateUser(req *dto.UpdateUserRequest, userId string) erro
 	err = u.userRepository.UpdateUser(&us)
 	if err == nil && req.Image != nil && req.Image.Filename != "" {
 		_, err := u.fileServiceClient.RemoveProfileImage(ctx, &fpb.ImageName{Name: *user.Image})
-		return err
+		if err != nil {
+			go func() {
+				if err := u.util.EmitLog(u.logEmitter, "ERR", fmt.Sprintf("Error remove image via file service. err: %v", err.Error())); err != nil {
+					u.logger.Error().Err(err).Msg("failed to emit log")
+				}
+			}()
+		}
+		return nil
 	} else if err != nil && req.Image != nil && req.Image.Filename != "" {
 		_, err := u.fileServiceClient.RemoveProfileImage(ctx, &fpb.ImageName{Name: *us.Image})
-		return err
+		if err != nil {
+			go func() {
+				if err := u.util.EmitLog(u.logEmitter, "ERR", fmt.Sprintf("Error remove image via file service. err: %v", err.Error())); err != nil {
+					u.logger.Error().Err(err).Msg("failed to emit log")
+				}
+			}()
+		}
+		return nil
 	}
 	// push event bus in goroutine
 	go func() {

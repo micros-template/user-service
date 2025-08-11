@@ -4,52 +4,42 @@ import (
 	"context"
 	"time"
 
+	"10.1.20.130/dropping/log-management/pkg"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/infrastructure/cache"
-	"github.com/redis/go-redis/v9"
+	"10.1.20.130/dropping/user-service/pkg/utils"
 	"github.com/rs/zerolog"
 )
 
 type (
 	RedisRepository interface {
-		GetResource(context.Context, string) (string, error)
 		SetResource(context.Context, string, string, time.Duration) error
-		RemoveResource(context.Context, string) error
 	}
 	redisRepository struct {
 		redisClient cache.RedisCache
 		logger      zerolog.Logger
+		logEmitter  pkg.LogEmitter
+		util        utils.UserServiceUtil
 	}
 )
 
-func NewRedisRepository(r cache.RedisCache, logger zerolog.Logger) RedisRepository {
+func NewRedisRepository(r cache.RedisCache, logEmitter pkg.LogEmitter, util utils.UserServiceUtil, logger zerolog.Logger) RedisRepository {
 	return &redisRepository{
 		redisClient: r,
 		logger:      logger,
+		logEmitter:  logEmitter,
+		util:        util,
 	}
-}
-
-func (a *redisRepository) GetResource(c context.Context, key string) (string, error) {
-	v, err := a.redisClient.Get(c, key)
-	if err != nil {
-		if err == redis.Nil {
-			return "", dto.Err_NOTFOUND_KEY_NOTFOUND
-		}
-		return "", dto.Err_INTERNAL_GET_RESOURCE
-	}
-	return v, nil
-}
-
-func (a *redisRepository) RemoveResource(c context.Context, key string) error {
-	if err := a.redisClient.Delete(c, key); err != nil {
-		return dto.Err_INTERNAL_DELETE_RESOURCE
-	}
-	return nil
 }
 
 func (a *redisRepository) SetResource(c context.Context, key, value string, duration time.Duration) error {
 	err := a.redisClient.Set(c, key, value, duration)
 	if err != nil {
+		go func() {
+			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_SET_RESOURCE.Error()); err != nil {
+				a.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		return dto.Err_INTERNAL_SET_RESOURCE
 	}
 	return nil

@@ -3,7 +3,7 @@ module 10.1.20.130/dropping/user-service
 go 1.24.2
 
 require (
-	10.1.20.130/dropping/log-management v0.0.0-20250808031052-163cba810167
+	10.1.20.130/dropping/log-management v0.0.0-20250808075433-1d4dd15b3fc7
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/dropboks/event-bus-client v0.0.0-20250708092155-e109e3ad4b52
 	github.com/dropboks/proto-file v0.0.0-20250609044313-a7f78b2c48bf
