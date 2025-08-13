@@ -50,8 +50,9 @@ func (s *HTTPServer) Run(ctx context.Context) {
 
 			handler.RegisterUserRoutes(router, uh)
 			srv := &http.Server{
-				Addr:    s.Address,
-				Handler: router,
+				Addr:              s.Address,
+				Handler:           router,
+				ReadHeaderTimeout: 5 * time.Second,
 			}
 			go func() {
 				if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
