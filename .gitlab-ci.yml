@@ -6,6 +6,10 @@ stages:
   - post-pipeline
   - deploy
 
+variables:
+  TRIVY_SEVERITY: "CRITICAL,HIGH"
+  TRIVY_EXIT_CODE: "1"
+
 staticcheck:
   stage: lint
   image: golang:1.24-alpine3.22
@@ -38,7 +42,7 @@ sast:
     - go install github.com/securego/gosec/v2/cmd/gosec@latest
     - go mod download
   script:
-    - $GOPATH/bin/gosec -severity=high -fmt=json -out=gosec-report.json ./...
+    - $GOPATH/bin/gosec -severity=medium -fmt=json -out=gosec-report.json ./...
     - |
       if grep -q '"severity":"MEDIUM"\|"severity":"HIGH"' gosec-report.json; then
         echo "Medium or higher severity issues found!"
