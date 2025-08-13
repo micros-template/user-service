@@ -20,13 +20,13 @@ type UpdateUserRepositorySuite struct {
 	suite.Suite
 	userRepository repository.UserRepository
 	mockPgx        pgxmock.PgxPoolIface
-	mockUtil       *mk.UserServiceUtilMock
+	mockUtil       *mk.LoggerServiceUtilMock
 }
 
 func (u *UpdateUserRepositorySuite) SetupSuite() {
 	logger := zerolog.Nop()
 	pgxMock, err := pgxmock.NewPool()
-	u.mockUtil = new(mk.UserServiceUtilMock)
+	u.mockUtil = new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 	u.NoError(err)
 	u.mockPgx = pgxMock
@@ -80,7 +80,7 @@ func (u *UpdateUserRepositorySuite) TestUserRepository_UpdateUser_NotFound() {
 	u.mockPgx.ExpectExec(updateQuery).
 		WithArgs(user.FullName, user.Image, user.Email, user.Password, user.Verified, user.TwoFactorEnabled, user.ID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userRepository.UpdateUser(user)
 	u.ErrorIs(err, dto.Err_NOTFOUND_USER_NOT_FOUND)
@@ -105,7 +105,7 @@ func (u *UpdateUserRepositorySuite) TestUserRepository_UpdateUser_QueryError() {
 	u.mockPgx.ExpectExec(updateQuery).
 		WithArgs(user.FullName, user.Image, user.Email, user.Password, user.Verified, user.TwoFactorEnabled, user.ID).
 		WillReturnError(fmt.Errorf("query execution failed"))
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userRepository.UpdateUser(user)
 	u.ErrorIs(err, dto.Err_INTERNAL_FAILED_UPDATE_USER)

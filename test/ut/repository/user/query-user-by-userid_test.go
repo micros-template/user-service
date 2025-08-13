@@ -20,14 +20,14 @@ type GetUserByIdRepositorySuite struct {
 	suite.Suite
 	userRepository repository.UserRepository
 	mockPgx        pgxmock.PgxPoolIface
-	mockUtil       *mk.UserServiceUtilMock
+	mockUtil       *mk.LoggerServiceUtilMock
 }
 
 func (g *GetUserByIdRepositorySuite) SetupSuite() {
 
 	logger := zerolog.Nop()
 	pgxMock, err := pgxmock.NewPool()
-	mockUtil := new(mk.UserServiceUtilMock)
+	mockUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 	g.NoError(err)
 	g.mockUtil = mockUtil
@@ -81,7 +81,7 @@ func (g *GetUserByIdRepositorySuite) TestAuthRepository_GetUserById_NotFound() {
 	userId := "notfound"
 	query := `SELECT id, full_name, image, email, password, verified, two_factor_enabled FROM users WHERE id = \$1`
 	g.mockPgx.ExpectQuery(query).WithArgs(userId).WillReturnError(pgx.ErrNoRows)
-	g.mockUtil.On("EmitLog", mock.Anything, "WARN", mock.Anything).Return(nil)
+	g.mockUtil.On("EmitLog", "WARN", mock.Anything).Return(nil)
 
 	user, err := g.userRepository.QueryUserByUserId(userId)
 	g.Nil(user)
@@ -106,7 +106,7 @@ func (g *GetUserByIdRepositorySuite) TestAuthRepository_GetUserById_ScanError() 
 	)
 	query := `SELECT id, full_name, image, email, password, verified, two_factor_enabled FROM users WHERE id = \$1`
 	g.mockPgx.ExpectQuery(query).WithArgs(userId).WillReturnRows(rows)
-	g.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	g.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	user, err := g.userRepository.QueryUserByUserId(userId)
 	g.Nil(user)

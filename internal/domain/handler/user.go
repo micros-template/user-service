@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/service"
+	u "10.1.20.130/dropping/user-service/pkg/utils"
 	"github.com/dropboks/sharedlib/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -23,13 +25,15 @@ type (
 	userHandler struct {
 		userService service.UserService
 		logger      zerolog.Logger
+		logEmitter  u.LoggerServiceUtil
 	}
 )
 
-func NewUserHandler(userService service.UserService, logger zerolog.Logger) UserHandler {
+func NewUserHandler(userService service.UserService, logEmitter u.LoggerServiceUtil, logger zerolog.Logger) UserHandler {
 	return &userHandler{
 		userService: userService,
 		logger:      logger,
+		logEmitter:  logEmitter,
 	}
 }
 
@@ -49,14 +53,22 @@ func NewUserHandler(userService service.UserService, logger zerolog.Logger) User
 func (u *userHandler) DeleteUser(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
-		u.logger.Error().Msg("unathorized. userId is not found")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("unathorized. userId is not found. userId: %s", userId)); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(401, dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
 		return
 	}
 	var req dto.DeleteUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		u.logger.Error().Err(err).Msg("Bad Request")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("bad request: Err:%s", err.Error())); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(400, "invalid input")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
@@ -72,7 +84,7 @@ func (u *userHandler) DeleteUser(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, res)
 			return
 		}
-		res := utils.ReturnResponseError(500, err.Error())
+		res := utils.ReturnResponseError(500, "internal server error")
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 		return
 	}
@@ -96,20 +108,27 @@ func (u *userHandler) DeleteUser(ctx *gin.Context) {
 func (u *userHandler) ChangePassword(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
-		u.logger.Error().Msg("unathorized. userId is not found")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("unathorized. userId is not found. userId: %s", userId)); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(401, dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
 		return
 	}
 	var req dto.UpdatePasswordRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		u.logger.Error().Err(err).Msg("Bad Request")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("bad request: Err:%s", err.Error())); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(400, "invalid input")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
 	if err := u.userService.UpdatePassword(&req, userId); err != nil {
-		u.logger.Error().Err(err).Msg("Failed to update password")
 		switch err {
 		case dto.Err_BAD_REQUEST_PASSWORD_CONFIRM_PASSWORD_DOESNT_MATCH:
 			res := utils.ReturnResponseError(400, err.Error())
@@ -124,7 +143,7 @@ func (u *userHandler) ChangePassword(ctx *gin.Context) {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, res)
 			return
 		}
-		res := utils.ReturnResponseError(500, "failed to update password")
+		res := utils.ReturnResponseError(500, "internal server error")
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 		return
 	}
@@ -147,21 +166,28 @@ func (u *userHandler) ChangePassword(ctx *gin.Context) {
 func (u *userHandler) ChangeEmail(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
-		u.logger.Error().Msg("unathorized. userId is not found")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("unathorized. userId is not found. userId: %s", userId)); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(401, dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
 		return
 	}
 	var req dto.UpdateEmailRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		u.logger.Error().Err(err).Msg("Bad Request")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("bad request: Err:%s", err.Error())); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(400, "invalid input")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
 	if err := u.userService.UpdateEmail(&req, userId); err != nil {
-		u.logger.Error().Err(err).Msg("Failed to update email")
-		res := utils.ReturnResponseError(500, "failed to update email")
+		res := utils.ReturnResponseError(500, "internal server error")
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 		return
 	}
@@ -186,7 +212,11 @@ func (u *userHandler) ChangeEmail(ctx *gin.Context) {
 func (u *userHandler) UpdateUser(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
-		u.logger.Error().Msg("unathorized. userId is not found")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("unathorized. userId is not found. userId: %s", userId)); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(401, dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
 		return
@@ -194,7 +224,11 @@ func (u *userHandler) UpdateUser(ctx *gin.Context) {
 
 	var req dto.UpdateUserRequest
 	if err := ctx.ShouldBind(&req); err != nil {
-		u.logger.Error().Err(err).Msg("Bad Request")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("bad request: Err:%s", err.Error())); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(400, "invalid input")
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
@@ -215,13 +249,12 @@ func (u *userHandler) UpdateUser(ctx *gin.Context) {
 			return
 		}
 		code := status.Code(err)
-		message := status.Convert(err).Message()
 		if code == codes.Internal {
-			res := utils.ReturnResponseError(500, message)
+			res := utils.ReturnResponseError(500, "internal server error")
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 			return
 		}
-		res := utils.ReturnResponseError(500, err.Error())
+		res := utils.ReturnResponseError(500, "internal server error")
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 		return
 	}
@@ -243,7 +276,11 @@ func (u *userHandler) UpdateUser(ctx *gin.Context) {
 func (u *userHandler) GetProfile(ctx *gin.Context) {
 	userId := utils.GetUserId(ctx)
 	if userId == "" {
-		u.logger.Error().Msg("unathorized")
+		go func() {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("unathorized. userId is not found. userId: %s", userId)); err != nil {
+				u.logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		res := utils.ReturnResponseError(401, dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, res)
 		return
@@ -252,7 +289,7 @@ func (u *userHandler) GetProfile(ctx *gin.Context) {
 	if err != nil {
 		switch err {
 		case dto.Err_INTERNAL_FAILED_BUILD_QUERY, dto.Err_INTERNAL_FAILED_SCAN_USER:
-			res := utils.ReturnResponseError(500, err.Error())
+			res := utils.ReturnResponseError(500, "internal server error")
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 			return
 		case dto.Err_NOTFOUND_USER_NOT_FOUND:

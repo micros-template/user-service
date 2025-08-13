@@ -22,7 +22,7 @@ type DeleteUserServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.UserServiceUtilMock
+	mockUtil           *mk.LoggerServiceUtilMock
 }
 
 func (d *DeleteUserServiceSuite) SetupSuite() {
@@ -32,7 +32,7 @@ func (d *DeleteUserServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.UserServiceUtilMock)
+	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 
 	logger := zerolog.Nop()
@@ -109,7 +109,7 @@ func (d *DeleteUserServiceSuite) TestUserService_DeleteUser_WrongPassword() {
 	req := dto.DeleteUserRequest{
 		Password: "password1234",
 	}
-	d.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	d.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 	d.userRepository.On("QueryUserByUserId", "userid-123").Return(&u, nil)
 
 	err := d.userService.DeleteUser(&req, "userid-123")

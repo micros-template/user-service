@@ -5,6 +5,7 @@ import (
 	"log"
 	"mime/multipart"
 	"testing"
+	"time"
 
 	"net/http"
 	"net/http/httptest"
@@ -22,18 +23,24 @@ type UpdateUserHandlerSuite struct {
 	suite.Suite
 	userHandler     handler.UserHandler
 	mockUserService *mocks.UserServiceMock
+	mockLogEmitter  *mocks.LoggerServiceUtilMock
 }
 
 func (u *UpdateUserHandlerSuite) SetupSuite() {
 	logger := zerolog.Nop()
 	mockedUserService := new(mocks.UserServiceMock)
+	mockedLogEmitter := new(mocks.LoggerServiceUtilMock)
 	u.mockUserService = mockedUserService
-	u.userHandler = handler.NewUserHandler(mockedUserService, logger)
+	u.mockLogEmitter = mockedLogEmitter
+	u.userHandler = handler.NewUserHandler(mockedUserService, mockedLogEmitter, logger)
 }
 
 func (u *UpdateUserHandlerSuite) SetupTest() {
 	u.mockUserService.ExpectedCalls = nil
+	u.mockLogEmitter.ExpectedCalls = nil
+
 	u.mockUserService.Calls = nil
+	u.mockLogEmitter.Calls = nil
 	gin.SetMode(gin.TestMode)
 }
 
@@ -71,11 +78,40 @@ func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_MissingUserId() {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request = request
+	u.mockLogEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	u.userHandler.UpdateUser(ctx)
 
 	u.Equal(http.StatusUnauthorized, w.Code)
 	u.Contains(w.Body.String(), dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
+
+	time.Sleep(time.Second)
+	u.mockLogEmitter.AssertExpectations(u.T())
+}
+
+func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_InvalidInput() {
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	_ = writer.WriteField("two_factor_enabled", "true")
+
+	writer.Close()
+
+	request := httptest.NewRequest(http.MethodPatch, "/", body)
+	w := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(w)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	request.Header.Set("User-Data", `{"user_id":"12345"}`)
+	ctx.Request = request
+	u.mockLogEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
+
+	u.userHandler.UpdateUser(ctx)
+
+	u.Equal(http.StatusBadRequest, w.Code)
+	u.Contains(w.Body.String(), "invalid input")
+
+	time.Sleep(time.Second)
+	u.mockLogEmitter.AssertExpectations(u.T())
 }
 
 func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_UserNotFound() {
@@ -100,6 +136,9 @@ func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_UserNotFound() {
 	u.Contains(w.Body.String(), dto.Err_NOTFOUND_USER_NOT_FOUND.Error())
 
 	u.mockUserService.AssertExpectations(u.T())
+
+	time.Sleep(time.Second)
+	u.mockLogEmitter.AssertExpectations(u.T())
 }
 
 func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_ImageWrongExtension() {

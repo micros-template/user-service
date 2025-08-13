@@ -22,7 +22,7 @@ type UpdatePasswordServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.UserServiceUtilMock
+	mockUtil           *mk.LoggerServiceUtilMock
 }
 
 func (u *UpdatePasswordServiceSuite) SetupSuite() {
@@ -32,7 +32,7 @@ func (u *UpdatePasswordServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.UserServiceUtilMock)
+	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 
 	logger := zerolog.Nop()
@@ -115,7 +115,7 @@ func (u *UpdatePasswordServiceSuite) TestUserService_UpdatePassword_PasswordDoes
 		NewPassword:        "new-password",
 		ConfirmNewPassword: "new-password123",
 	}
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdatePassword(req, "userid-123")
 
@@ -141,7 +141,7 @@ func (u *UpdatePasswordServiceSuite) TestUserService_UpdatePassword_WrongPasswor
 		Password: oldPassword,
 	}
 	u.userRepository.On("QueryUserByUserId", userId).Return(user, nil)
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdatePassword(req, userId)
 

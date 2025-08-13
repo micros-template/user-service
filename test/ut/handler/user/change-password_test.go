@@ -5,12 +5,14 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/handler"
 	"10.1.20.130/dropping/user-service/test/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,18 +20,24 @@ type ChangePasswordHandlerSuite struct {
 	suite.Suite
 	userHandler     handler.UserHandler
 	mockUserService *mocks.UserServiceMock
+	mockLogEmitter  *mocks.LoggerServiceUtilMock
 }
 
 func (c *ChangePasswordHandlerSuite) SetupSuite() {
 	logger := zerolog.Nop()
 	mockedUserService := new(mocks.UserServiceMock)
+	mockedLogEmitter := new(mocks.LoggerServiceUtilMock)
 	c.mockUserService = mockedUserService
-	c.userHandler = handler.NewUserHandler(mockedUserService, logger)
+	c.mockLogEmitter = mockedLogEmitter
+	c.userHandler = handler.NewUserHandler(mockedUserService, mockedLogEmitter, logger)
 }
 
 func (c *ChangePasswordHandlerSuite) SetupTest() {
 	c.mockUserService.ExpectedCalls = nil
+	c.mockLogEmitter.ExpectedCalls = nil
+
 	c.mockUserService.Calls = nil
+	c.mockLogEmitter.Calls = nil
 	gin.SetMode(gin.TestMode)
 }
 
@@ -72,12 +80,17 @@ func (c *ChangePasswordHandlerSuite) TestUserHandler_ChangePassword_MissingUserI
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request = httptest.NewRequest(http.MethodPost, "/change-password", nil)
 	ctx.Request.Header.Set("Content-Type", "application/json")
+	c.mockLogEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	c.userHandler.ChangePassword(ctx)
 
 	c.Equal(http.StatusUnauthorized, w.Code)
 	c.Contains(w.Body.String(), "401")
 	c.Contains(w.Body.String(), "invalid token")
+
+	time.Sleep(time.Second)
+	c.mockLogEmitter.AssertExpectations(c.T())
+
 }
 
 func (c *ChangePasswordHandlerSuite) TestUserHandler_ChangePassword_MissingBody() {
@@ -92,12 +105,16 @@ func (c *ChangePasswordHandlerSuite) TestUserHandler_ChangePassword_MissingBody(
 	ctx.Request = httptest.NewRequest(http.MethodPost, "/change-password", b)
 	ctx.Request.Header.Set("User-Data", `{"user_id":"12345"}`)
 	ctx.Request.Header.Set("Content-Type", "application/json")
+	c.mockLogEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	c.userHandler.ChangePassword(ctx)
 
 	c.Equal(http.StatusBadRequest, w.Code)
 	c.Contains(w.Body.String(), "400")
 	c.Contains(w.Body.String(), "invalid input")
+
+	time.Sleep(time.Second)
+	c.mockLogEmitter.AssertExpectations(c.T())
 }
 
 func (c *ChangePasswordHandlerSuite) TestUserHandler_ChangePassword_PasswordAndConfirmPasswordNotMatch() {

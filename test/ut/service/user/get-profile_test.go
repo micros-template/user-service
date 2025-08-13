@@ -20,7 +20,7 @@ type GetProfileServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.UserServiceUtilMock
+	mockUtil           *mk.LoggerServiceUtilMock
 }
 
 func (g *GetProfileServiceSuite) SetupSuite() {
@@ -30,7 +30,7 @@ func (g *GetProfileServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.UserServiceUtilMock)
+	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 
 	logger := zerolog.Nop()

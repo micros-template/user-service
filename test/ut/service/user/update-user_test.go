@@ -28,7 +28,7 @@ type UpdateUserUserServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.UserServiceUtilMock
+	mockUtil           *mk.LoggerServiceUtilMock
 }
 
 func (u *UpdateUserUserServiceSuite) SetupSuite() {
@@ -38,7 +38,7 @@ func (u *UpdateUserUserServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.UserServiceUtilMock)
+	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 
 	logger := zerolog.Nop()
@@ -121,7 +121,7 @@ func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_InvalidImageExte
 		ID: userId,
 	}
 	u.userRepository.On("QueryUserByUserId", userId).Return(user, nil)
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdateUser(req, userId)
 
@@ -156,7 +156,7 @@ func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_SizeLimitExceede
 		ID: userId,
 	}
 	u.userRepository.On("QueryUserByUserId", userId).Return(user, nil)
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdateUser(req, userId)
 
@@ -195,7 +195,7 @@ func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_ImageUploadError
 		Ext:   "jpg",
 	}
 	u.fileService.On("SaveProfileImage", mock.Anything, imageReq).Return(nil, status.Errorf(codes.Internal, "upload error"))
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdateUser(req, userId)
 

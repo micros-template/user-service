@@ -19,11 +19,11 @@ type (
 		redisClient cache.RedisCache
 		logger      zerolog.Logger
 		logEmitter  pkg.LogEmitter
-		util        utils.UserServiceUtil
+		util        utils.LoggerServiceUtil
 	}
 )
 
-func NewRedisRepository(r cache.RedisCache, logEmitter pkg.LogEmitter, util utils.UserServiceUtil, logger zerolog.Logger) RedisRepository {
+func NewRedisRepository(r cache.RedisCache, logEmitter pkg.LogEmitter, util utils.LoggerServiceUtil, logger zerolog.Logger) RedisRepository {
 	return &redisRepository{
 		redisClient: r,
 		logger:      logger,
@@ -36,7 +36,7 @@ func (a *redisRepository) SetResource(c context.Context, key, value string, dura
 	err := a.redisClient.Set(c, key, value, duration)
 	if err != nil {
 		go func() {
-			if err := a.util.EmitLog(a.logEmitter, "ERR", dto.Err_INTERNAL_SET_RESOURCE.Error()); err != nil {
+			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_SET_RESOURCE.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()

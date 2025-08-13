@@ -24,7 +24,7 @@ type UpdateEmailServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.UserServiceUtilMock
+	mockUtil           *mk.LoggerServiceUtilMock
 }
 
 func (u *UpdateEmailServiceSuite) SetupSuite() {
@@ -34,7 +34,7 @@ func (u *UpdateEmailServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.UserServiceUtilMock)
+	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 
 	logger := zerolog.Nop()
@@ -113,7 +113,7 @@ func (u *UpdateEmailServiceSuite) TestUserService_UpdateEmail_JetstreamError() {
 	u.redisRepository.On("SetResource", mock.Anything, "newEmail:"+userId, req.Email, mock.Anything).Return(nil).Once()
 	u.redisRepository.On("SetResource", mock.Anything, "changeEmailToken:"+userId, mock.Anything, mock.Anything).Return(nil).Once()
 	u.notificationStream.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(&jetstream.PubAck{}, errors.New("failed to update email")).Once()
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdateEmail(req, userId)
 

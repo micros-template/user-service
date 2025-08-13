@@ -20,13 +20,13 @@ type CreateNewUserRepositorySuite struct {
 	suite.Suite
 	userRepository repository.UserRepository
 	mockPgx        pgxmock.PgxPoolIface
-	mockUtil       *mk.UserServiceUtilMock
+	mockUtil       *mk.LoggerServiceUtilMock
 }
 
 func (u *CreateNewUserRepositorySuite) SetupSuite() {
 	logger := zerolog.Nop()
 	pgxMock, err := pgxmock.NewPool()
-	mockUtil := new(mk.UserServiceUtilMock)
+	mockUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 	u.NoError(err)
 	u.mockPgx = pgxMock
@@ -83,7 +83,7 @@ func (u *CreateNewUserRepositorySuite) TestUserRepository_CreateNewUser_ScanErro
 	u.mockPgx.ExpectQuery(insertQuery).
 		WithArgs(user.ID, user.FullName, user.Image, user.Email, user.Password, user.Verified, user.TwoFactorEnabled).
 		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(struct{}{}))
-	u.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userRepository.CreateNewUser(user)
 	u.Error(err)

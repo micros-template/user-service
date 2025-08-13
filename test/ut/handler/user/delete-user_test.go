@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/handler"
@@ -19,19 +20,24 @@ type DeleteUserHandlerSuite struct {
 	suite.Suite
 	userHandler     handler.UserHandler
 	mockUserService *mocks.UserServiceMock
+	mockLogEmitter  *mocks.LoggerServiceUtilMock
 }
 
 func (d *DeleteUserHandlerSuite) SetupSuite() {
 	logger := zerolog.Nop()
-	// logger := zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger()
 	mockedUserService := new(mocks.UserServiceMock)
+	mockedLogEmitter := new(mocks.LoggerServiceUtilMock)
 	d.mockUserService = mockedUserService
-	d.userHandler = handler.NewUserHandler(mockedUserService, logger)
+	d.mockLogEmitter = mockedLogEmitter
+	d.userHandler = handler.NewUserHandler(mockedUserService, mockedLogEmitter, logger)
 }
 
 func (d *DeleteUserHandlerSuite) SetupTest() {
 	d.mockUserService.ExpectedCalls = nil
+	d.mockLogEmitter.ExpectedCalls = nil
+
 	d.mockUserService.Calls = nil
+	d.mockLogEmitter.Calls = nil
 	gin.SetMode(gin.TestMode)
 }
 
@@ -58,31 +64,40 @@ func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_Success() {
 	d.Contains(w.Body.String(), dto.SUCCESS_DELETE_USER)
 }
 
-func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_Unauthorized_UserIdNotFound() {
+func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_MissingUserId() {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request, _ = http.NewRequest(http.MethodDelete, "/", nil)
+	ctx.Request.Header.Set("Content-Type", "application/json")
+	d.mockLogEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	d.userHandler.DeleteUser(ctx)
 
 	d.Equal(http.StatusUnauthorized, w.Code)
 	d.Contains(w.Body.String(), dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
+
+	time.Sleep(time.Second)
+	d.mockLogEmitter.AssertExpectations(d.T())
 }
 
-func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_BadRequest_InvalidInput() {
+func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_InvalidInput() {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request, _ = http.NewRequest(http.MethodDelete, "/", nil)
 	ctx.Request.Header.Set("Content-Type", "application/json")
 	ctx.Request.Header.Set("User-Data", `{"user_id":"12345"}`)
 
+	d.mockLogEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 	d.userHandler.DeleteUser(ctx)
 
 	d.Equal(http.StatusBadRequest, w.Code)
 	d.Contains(w.Body.String(), "invalid input")
+
+	time.Sleep(time.Second)
+	d.mockLogEmitter.AssertExpectations(d.T())
 }
 
-func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_Unauthorized_PasswordWrong() {
+func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_WrongPassword() {
 	userId := "12345"
 	reqBody := `{"password":"wrong-password"}`
 	d.mockUserService.On("DeleteUser", mock.AnythingOfType("*dto.DeleteUserRequest"), userId).
@@ -100,7 +115,7 @@ func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_Unauthorized_Passwor
 	d.Contains(w.Body.String(), dto.Err_UNAUTHORIZED_PASSWORD_WRONG.Error())
 }
 
-func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_NotFound_UserNotFound() {
+func (d *DeleteUserHandlerSuite) TestUserHandler_DeleteUser_UserNotFound() {
 	userId := "12345"
 	reqBody := `{"password":"secret"}`
 	d.mockUserService.On("DeleteUser", mock.AnythingOfType("*dto.DeleteUserRequest"), userId).

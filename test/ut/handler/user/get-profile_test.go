@@ -4,12 +4,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/handler"
 	"10.1.20.130/dropping/user-service/test/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -17,18 +19,23 @@ type GetProfileHandlerSuite struct {
 	suite.Suite
 	userHandler     handler.UserHandler
 	mockUserService *mocks.UserServiceMock
+	mockLogEmitter  *mocks.LoggerServiceUtilMock
 }
 
 func (g *GetProfileHandlerSuite) SetupSuite() {
 	logger := zerolog.Nop()
 	mockedUserService := new(mocks.UserServiceMock)
+	mockedLogEmitter := new(mocks.LoggerServiceUtilMock)
 	g.mockUserService = mockedUserService
-	g.userHandler = handler.NewUserHandler(mockedUserService, logger)
+	g.mockLogEmitter = mockedLogEmitter
+	g.userHandler = handler.NewUserHandler(mockedUserService, mockedLogEmitter, logger)
 }
 
 func (g *GetProfileHandlerSuite) SetupTest() {
 	g.mockUserService.ExpectedCalls = nil
+	g.mockLogEmitter.ExpectedCalls = nil
 	g.mockUserService.Calls = nil
+	g.mockLogEmitter.Calls = nil
 	gin.SetMode(gin.TestMode)
 }
 
@@ -62,6 +69,7 @@ func (g *GetProfileHandlerSuite) TestUserHandler_GetProfile_MissingUserId() {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request = httptest.NewRequest(http.MethodGet, "/me", nil)
+	g.mockLogEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	g.userHandler.GetProfile(ctx)
 
@@ -69,6 +77,8 @@ func (g *GetProfileHandlerSuite) TestUserHandler_GetProfile_MissingUserId() {
 	g.Contains(w.Body.String(), "401")
 	g.Contains(w.Body.String(), dto.Err_UNAUTHORIZED_USER_ID_NOTFOUND.Error())
 
+	time.Sleep(time.Second)
+	g.mockLogEmitter.AssertExpectations(g.T())
 }
 
 func (g *GetProfileHandlerSuite) TestUserHandler_GetProfile_UserNotFound() {

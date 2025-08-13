@@ -7,18 +7,22 @@ import (
 	ld "10.1.20.130/dropping/log-management/pkg/dto"
 )
 
-type UserServiceUtil interface {
-	EmitLog(logEmitter pkg.LogEmitter, msgType, msg string) error
+type LoggerServiceUtil interface {
+	EmitLog(msgType, msg string) error
 }
 
-type userServiceUtil struct{}
-
-func NewUserServiceUtil() UserServiceUtil {
-	return &userServiceUtil{}
+type loggerServiceUtil struct {
+	logEmitter pkg.LogEmitter
 }
 
-func (u *userServiceUtil) EmitLog(logEmitter pkg.LogEmitter, msgType, msg string) error {
-	if err := logEmitter.EmitLog(context.Background(), ld.LogMessage{
+func NewUserServiceUtil(logEmitter pkg.LogEmitter) LoggerServiceUtil {
+	return &loggerServiceUtil{
+		logEmitter: logEmitter,
+	}
+}
+
+func (u *loggerServiceUtil) EmitLog(msgType, msg string) error {
+	if err := u.logEmitter.EmitLog(context.Background(), ld.LogMessage{
 		Type:     msgType,
 		Service:  "user_service",
 		Msg:      msg,

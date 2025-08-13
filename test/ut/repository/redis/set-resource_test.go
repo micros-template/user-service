@@ -17,14 +17,14 @@ type SetResourceRepositorySuite struct {
 	suite.Suite
 	redisRepository repository.RedisRepository
 	mockRedisClient *mk.MockRedisCache
-	mockUtil        *mk.UserServiceUtilMock
+	mockUtil        *mk.LoggerServiceUtilMock
 }
 
 func (s *SetResourceRepositorySuite) SetupSuite() {
 
 	logger := zerolog.Nop()
 	redisClient := new(mk.MockRedisCache)
-	mockUtil := new(mk.UserServiceUtilMock)
+	mockUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 
 	s.mockRedisClient = redisClient

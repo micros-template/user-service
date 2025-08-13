@@ -19,13 +19,13 @@ type DeleteUserRepositorySuite struct {
 	suite.Suite
 	userRepository repository.UserRepository
 	mockPgx        pgxmock.PgxPoolIface
-	mockUtil       *mk.UserServiceUtilMock
+	mockUtil       *mk.LoggerServiceUtilMock
 }
 
 func (d *DeleteUserRepositorySuite) SetupSuite() {
 	logger := zerolog.Nop()
 	pgxMock, err := pgxmock.NewPool()
-	mockUtil := new(mk.UserServiceUtilMock)
+	mockUtil := new(mk.LoggerServiceUtilMock)
 	mockLogEmitter := new(mocks.LogEmitterMock)
 
 	d.NoError(err)
@@ -60,7 +60,7 @@ func (d *DeleteUserRepositorySuite) TestUserRepository_DeleteUser_UserNotFound()
 	d.mockPgx.ExpectExec(regexp.QuoteMeta(query)).
 		WithArgs(userId).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
-	d.mockUtil.On("EmitLog", mock.Anything, "ERR", mock.Anything).Return(nil)
+	d.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := d.userRepository.DeleteUser(userId)
 	d.Equal(dto.Err_NOTFOUND_USER_NOT_FOUND, err)
