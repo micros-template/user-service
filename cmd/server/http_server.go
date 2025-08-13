@@ -37,8 +37,16 @@ func (s *HTTPServer) Run(ctx context.Context) {
 		) {
 			defer grpcClientManager.CloseAllConnections()
 			defer pgx.Close()
-			defer nc.Drain()
-			defer redis.Close()
+			defer func() {
+				if err := redis.Close(); err != nil {
+					logger.Error().Err(err).Msg("Failed to close Redis client")
+				}
+			}()
+			defer func() {
+				if err := nc.Drain(); err != nil {
+					logger.Error().Err(err).Msg("Failed to drain nats client")
+				}
+			}()
 
 			handler.RegisterUserRoutes(router, uh)
 			srv := &http.Server{
@@ -55,7 +63,9 @@ func (s *HTTPServer) Run(ctx context.Context) {
 				for range 50 {
 					conn, err := net.DialTimeout("tcp", s.Address, 100*time.Millisecond)
 					if err == nil {
-						conn.Close()
+						if err := conn.Close(); err != nil {
+							logger.Fatal().Err(err).Msg("establish check connection failed to close")
+						}
 						s.ServerReady <- true
 						break
 					}

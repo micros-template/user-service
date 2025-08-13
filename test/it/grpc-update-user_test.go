@@ -148,7 +148,11 @@ func (u *GRPCUpdateUserITSuite) TestUpdateUserIT_Success() {
 	email := fmt.Sprintf("test+%d@example.com", time.Now().UnixNano())
 	conn, err := helper.ConnectGRPC("localhost:50051")
 	u.Require().NoError(err, "Failed to connect to gRPC server")
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Printf("failed to close gRPC connection: %v", err)
+		}
+	}()
 	userServiceClient := upb.NewUserServiceClient(conn)
 
 	// register
@@ -197,7 +201,11 @@ func (u *GRPCUpdateUserITSuite) TestUpdateUserIT_UserNotFound() {
 	}
 	conn, err := helper.ConnectGRPC("10.1.20.130:50051")
 	u.Require().NoError(err, "Failed to connect to gRPC server")
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Printf("failed to close gRPC connection: %v", err)
+		}
+	}()
 
 	userServiceClient := upb.NewUserServiceClient(conn)
 	status, err := userServiceClient.UpdateUser(u.ctx, user)

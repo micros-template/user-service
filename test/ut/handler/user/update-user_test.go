@@ -52,7 +52,9 @@ func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_Success() {
 
 	formWriter := multipart.NewWriter(reqBody)
 	_ = formWriter.WriteField("full_name", "test-full-name")
-	formWriter.Close()
+	if err := formWriter.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	request := httptest.NewRequest(http.MethodPatch, "/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
@@ -95,7 +97,9 @@ func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_InvalidInput() {
 	writer := multipart.NewWriter(body)
 	_ = writer.WriteField("two_factor_enabled", "true")
 
-	writer.Close()
+	if err := writer.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	request := httptest.NewRequest(http.MethodPatch, "/", body)
 	w := httptest.NewRecorder()
@@ -119,7 +123,9 @@ func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_UserNotFound() {
 
 	formWriter := multipart.NewWriter(reqBody)
 	_ = formWriter.WriteField("full_name", "test-full-name")
-	formWriter.Close()
+	if err := formWriter.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	request := httptest.NewRequest(http.MethodPatch, "/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
@@ -151,7 +157,9 @@ func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_ImageWrongExtension(
 	if err != nil {
 		log.Fatal("failed to create image data")
 	}
-	formWriter.Close()
+	if err := formWriter.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	request := httptest.NewRequest(http.MethodPatch, "/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
@@ -180,7 +188,9 @@ func (u *UpdateUserHandlerSuite) TestUserHandler_UpdateUser_ImageLimitSizeExceed
 	if err != nil {
 		log.Fatal("failed to create image data")
 	}
-	formWriter.Close()
+	if err := formWriter.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	request := httptest.NewRequest(http.MethodPatch, "/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())

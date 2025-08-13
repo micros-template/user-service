@@ -175,8 +175,12 @@ func (u *UpdateUserUserServiceSuite) TestUserService_UpdateUser_ImageUploadError
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 	part, _ := writer.CreateFormFile("image", "valid.jpg")
-	part.Write(imageData)
-	writer.Close()
+	if _, err := part.Write(imageData); err != nil {
+		log.Fatal("failed to write image data:", err)
+	}
+	if err := writer.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	reader := multipart.NewReader(&buf, writer.Boundary())
 	form, _ := reader.ReadForm(32 << 20)

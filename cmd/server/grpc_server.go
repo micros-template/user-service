@@ -44,7 +44,9 @@ func (s *GRPCServer) Run(ctx context.Context) {
 			for range 50 {
 				conn, err := net.DialTimeout("tcp", s.Address, 100*time.Millisecond)
 				if err == nil {
-					conn.Close()
+					if err := conn.Close(); err != nil {
+						logger.Fatal().Err(err).Msg("establish check connection failed to close")
+					}
 					s.ServerReady <- true
 					break
 				}

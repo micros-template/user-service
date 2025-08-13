@@ -183,8 +183,9 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_Success() {
 
 	u.Equal(http.StatusCreated, response.StatusCode)
 	u.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
-
+	if err := response.Body.Close(); err != nil {
+		u.T().Errorf("error closing response body: %v", err)
+	}
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
 	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
@@ -228,7 +229,9 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_Success() {
 	reqBody := &bytes.Buffer{}
 	formWriter := multipart.NewWriter(reqBody)
 	_ = formWriter.WriteField("full_name", "test-full-name")
-	formWriter.Close()
+	if err := formWriter.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
@@ -251,7 +254,9 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_MissingUserID() {
 	reqBody := &bytes.Buffer{}
 	formWriter := multipart.NewWriter(reqBody)
 	_ = formWriter.WriteField("full_name", "test-full-name")
-	formWriter.Close()
+	if err := formWriter.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	request, err := http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
@@ -279,8 +284,9 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_MissingBody() {
 
 	u.Equal(http.StatusCreated, response.StatusCode)
 	u.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
-
+	if err := response.Body.Close(); err != nil {
+		u.T().Errorf("error closing response body: %v", err)
+	}
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
 	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
@@ -376,8 +382,9 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageWrongExtension() {
 
 	u.Equal(http.StatusCreated, response.StatusCode)
 	u.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
-
+	if err := response.Body.Close(); err != nil {
+		u.T().Errorf("error closing response body: %v", err)
+	}
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
 	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
@@ -427,7 +434,9 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageWrongExtension() {
 	if err != nil {
 		log.Fatal("failed to create image data")
 	}
-	formWriter.Close()
+	if err := formWriter.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 
 	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
@@ -460,8 +469,9 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageLimitSizeExceeded() {
 
 	u.Equal(http.StatusCreated, response.StatusCode)
 	u.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
-
+	if err := response.Body.Close(); err != nil {
+		u.T().Errorf("error closing response body: %v", err)
+	}
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
 	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
@@ -513,7 +523,9 @@ func (u *HTTPUpdateUserITSuite) TestUpdateUserIT_ImageLimitSizeExceeded() {
 	if err != nil {
 		log.Fatal("failed to create image data")
 	}
-	formWriter.Close()
+	if err := formWriter.Close(); err != nil {
+		log.Fatal("failed to close form writer")
+	}
 	request, err = http.NewRequest(http.MethodPatch, "http://localhost:9090/api/v1/user/", reqBody)
 	request.Header.Set("Content-Type", formWriter.FormDataContentType())
 	request.Header.Set("Authorization", "Bearer "+jwt)

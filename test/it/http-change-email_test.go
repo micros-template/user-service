@@ -183,7 +183,9 @@ func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_Success() {
 
 	c.Equal(http.StatusCreated, response.StatusCode)
 	c.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
+	if err := response.Body.Close(); err != nil {
+		c.T().Errorf("error closing response body: %v", err)
+	}
 
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
@@ -275,7 +277,9 @@ func (c *HTTPChangeEmailITSuite) TestChangeEmailIT_MissingBody() {
 
 	c.Equal(http.StatusCreated, response.StatusCode)
 	c.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
+	if err := response.Body.Close(); err != nil {
+		c.T().Errorf("error closing response body: %v", err)
+	}
 
 	time.Sleep(time.Second) //give a time for auth_db update the user
 

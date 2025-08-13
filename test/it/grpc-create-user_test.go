@@ -152,7 +152,11 @@ func (c *GRPCCreateUserITSuite) TestCreateUserIT_Success() {
 	}
 	conn, err := helper.ConnectGRPC("localhost:50051")
 	c.Require().NoError(err, "Failed to connect to gRPC server")
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Printf("failed to close gRPC connection: %v", err)
+		}
+	}()
 
 	userServiceClient := upb.NewUserServiceClient(conn)
 	status, err := userServiceClient.CreateUser(c.ctx, user)

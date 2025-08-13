@@ -184,8 +184,9 @@ func (c *HTTPChangePasswordITSuite) TestChangePasswordIT_Success() {
 
 	c.Equal(http.StatusCreated, response.StatusCode)
 	c.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
-
+	if err := response.Body.Close(); err != nil {
+		c.T().Errorf("error closing response body: %v", err)
+	}
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
 	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
@@ -276,8 +277,9 @@ func (c *HTTPChangePasswordITSuite) TestChangePasswordIT_MissingBody() {
 
 	c.Equal(http.StatusCreated, response.StatusCode)
 	c.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
-
+	if err := response.Body.Close(); err != nil {
+		c.T().Errorf("error closing response body: %v", err)
+	}
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
 	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
@@ -349,8 +351,9 @@ func (c *HTTPChangePasswordITSuite) TestChangePasswordIT_PasswordAndConfirmPassw
 
 	c.Equal(http.StatusCreated, response.StatusCode)
 	c.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
-
+	if err := response.Body.Close(); err != nil {
+		c.T().Errorf("error closing response body: %v", err)
+	}
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
 	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
@@ -453,8 +456,9 @@ func (c *HTTPChangePasswordITSuite) TestChangePasswordIT_WrongPassword() {
 
 	c.Equal(http.StatusCreated, response.StatusCode)
 	c.Contains(string(byteBody), "Register Success. Check your email for verification.")
-	response.Body.Close()
-
+	if err := response.Body.Close(); err != nil {
+		c.T().Errorf("error closing response body: %v", err)
+	}
 	time.Sleep(time.Second) //give a time for auth_db update the user
 
 	regex := `http://localhost:9090/api/v1/auth/verify-email\?userid=[^&]+&token=[^"']+`
