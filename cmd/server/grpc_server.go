@@ -66,7 +66,7 @@ func (s *GRPCServer) Run(ctx context.Context) {
 		if err := logEmitter.EmitLog("INFO", fmt.Sprintf("gRPC server running in port %s", s.Address)); err != nil {
 			logger.Error().Err(err).Msg("failed to emit log")
 		}
-
+		logger.Info().Msg("gRPC server running in port " + s.Address)
 		<-ctx.Done()
 		if err := logEmitter.EmitLog("INFO", "Shutting down gRPC server..."); err != nil {
 			logger.Error().Err(err).Msg("failed to emit log")
