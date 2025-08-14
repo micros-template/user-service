@@ -14,8 +14,8 @@ import (
 	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
 	"10.1.20.130/dropping/user-service/internal/infrastructure/eventbus"
 	"10.1.20.130/dropping/user-service/internal/infrastructure/grpc"
+	_logger "10.1.20.130/dropping/user-service/internal/infrastructure/logger"
 	_mq "10.1.20.130/dropping/user-service/internal/infrastructure/message-queue"
-	"10.1.20.130/dropping/user-service/pkg/utils"
 	"go.uber.org/dig"
 )
 
@@ -70,7 +70,7 @@ func BuildContainer() *dig.Container {
 		panic("Failed to provide user service grpc connection: " + err.Error())
 	}
 	// user service utils
-	if err := container.Provide(utils.NewUserServiceUtil); err != nil {
+	if err := container.Provide(_logger.NewLoggerInfra); err != nil {
 		panic("Failed to provide user service utils: " + err.Error())
 	}
 	// user_repo

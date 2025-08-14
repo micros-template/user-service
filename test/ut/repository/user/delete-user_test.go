@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/log-management/pkg/mocks"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/repository"
 	mk "10.1.20.130/dropping/user-service/test/mocks"
@@ -19,24 +18,23 @@ type DeleteUserRepositorySuite struct {
 	suite.Suite
 	userRepository repository.UserRepository
 	mockPgx        pgxmock.PgxPoolIface
-	mockUtil       *mk.LoggerServiceUtilMock
+	logEmitter     *mk.LoggerInfraMock
 }
 
 func (d *DeleteUserRepositorySuite) SetupSuite() {
 	logger := zerolog.Nop()
 	pgxMock, err := pgxmock.NewPool()
-	mockUtil := new(mk.LoggerServiceUtilMock)
-	mockLogEmitter := new(mocks.LogEmitterMock)
+	mockLogEmitter := new(mk.LoggerInfraMock)
 
 	d.NoError(err)
-	d.mockUtil = mockUtil
+	d.logEmitter = mockLogEmitter
 	d.mockPgx = pgxMock
-	d.userRepository = repository.NewUserRepository(pgxMock, mockLogEmitter, mockUtil, logger)
+	d.userRepository = repository.NewUserRepository(pgxMock, mockLogEmitter, logger)
 }
 
 func (d *DeleteUserRepositorySuite) SetupTest() {
-	d.mockUtil.ExpectedCalls = nil
-	d.mockUtil.Calls = nil
+	d.logEmitter.ExpectedCalls = nil
+	d.logEmitter.Calls = nil
 }
 
 func TestDeleteUserRepositorySuite(t *testing.T) {
@@ -60,11 +58,11 @@ func (d *DeleteUserRepositorySuite) TestUserRepository_DeleteUser_UserNotFound()
 	d.mockPgx.ExpectExec(regexp.QuoteMeta(query)).
 		WithArgs(userId).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
-	d.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
+	d.logEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := d.userRepository.DeleteUser(userId)
 	d.Equal(dto.Err_NOTFOUND_USER_NOT_FOUND, err)
 
 	time.Sleep(time.Second)
-	d.mockUtil.AssertExpectations(d.T())
+	d.logEmitter.AssertExpectations(d.T())
 }

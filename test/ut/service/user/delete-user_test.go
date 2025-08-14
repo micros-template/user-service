@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/log-management/pkg/mocks"
 	"10.1.20.130/dropping/sharedlib/model"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/service"
@@ -22,7 +21,7 @@ type DeleteUserServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.LoggerServiceUtilMock
+	logEmitter         *mk.LoggerInfraMock
 }
 
 func (d *DeleteUserServiceSuite) SetupSuite() {
@@ -32,8 +31,7 @@ func (d *DeleteUserServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
-	mockLogEmitter := new(mocks.LogEmitterMock)
+	mockLogEmitter := new(mk.LoggerInfraMock)
 
 	logger := zerolog.Nop()
 	d.userRepository = mockUserRepo
@@ -41,8 +39,8 @@ func (d *DeleteUserServiceSuite) SetupSuite() {
 	d.fileService = mockFileService
 	d.notificationStream = mockNotificationStream
 	d.redisRepository = mockRedisRepository
-	d.mockUtil = mockUserServiceUtil
-	d.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter, mockUserServiceUtil)
+	d.logEmitter = mockLogEmitter
+	d.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter)
 }
 
 func (d *DeleteUserServiceSuite) SetupTest() {
@@ -51,14 +49,14 @@ func (d *DeleteUserServiceSuite) SetupTest() {
 	d.fileService.ExpectedCalls = nil
 	d.notificationStream.ExpectedCalls = nil
 	d.redisRepository.ExpectedCalls = nil
-	d.mockUtil.ExpectedCalls = nil
+	d.logEmitter.ExpectedCalls = nil
 
 	d.userRepository.Calls = nil
 	d.eventEmitter.Calls = nil
 	d.fileService.Calls = nil
 	d.notificationStream.Calls = nil
 	d.redisRepository.Calls = nil
-	d.mockUtil.Calls = nil
+	d.logEmitter.Calls = nil
 }
 
 func TestDeleteUserServiceSuite(t *testing.T) {
@@ -112,7 +110,7 @@ func (d *DeleteUserServiceSuite) TestUserService_DeleteUser_WrongPassword() {
 	req := dto.DeleteUserRequest{
 		Password: "password1234",
 	}
-	d.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
+	d.logEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 	d.userRepository.On("QueryUserByUserId", "userid-123").Return(&u, nil)
 
 	err := d.userService.DeleteUser(&req, "userid-123")
@@ -121,5 +119,5 @@ func (d *DeleteUserServiceSuite) TestUserService_DeleteUser_WrongPassword() {
 	d.userRepository.AssertExpectations(d.T())
 
 	time.Sleep(time.Second)
-	d.mockUtil.AssertExpectations(d.T())
+	d.logEmitter.AssertExpectations(d.T())
 }

@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"10.1.20.130/dropping/log-management/pkg"
 	"10.1.20.130/dropping/sharedlib/model"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
-	"10.1.20.130/dropping/user-service/pkg/utils"
+	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
@@ -25,17 +24,15 @@ type (
 	userRepository struct {
 		pgx        _db.Querier
 		logger     zerolog.Logger
-		logEmitter pkg.LogEmitter
-		util       utils.LoggerServiceUtil
+		logEmitter logger.LoggerInfra
 	}
 )
 
-func NewUserRepository(pgx _db.Querier, logEmitter pkg.LogEmitter, util utils.LoggerServiceUtil, logger zerolog.Logger) UserRepository {
+func NewUserRepository(pgx _db.Querier, logEmitter logger.LoggerInfra, logger zerolog.Logger) UserRepository {
 	return &userRepository{
 		pgx:        pgx,
 		logger:     logger,
 		logEmitter: logEmitter,
-		util:       util,
 	}
 }
 
@@ -47,7 +44,7 @@ func (a *userRepository) DeleteUser(userId string) error {
 		ToSql()
 	if err != nil {
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -57,7 +54,7 @@ func (a *userRepository) DeleteUser(userId string) error {
 	cmdTag, err := a.pgx.Exec(context.Background(), query, args...)
 	if err != nil {
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_FAILED_DELETE_USER.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_FAILED_DELETE_USER.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -65,7 +62,7 @@ func (a *userRepository) DeleteUser(userId string) error {
 	}
 	if cmdTag.RowsAffected() == 0 {
 		go func() {
-			if err := a.util.EmitLog("ERR", fmt.Sprintf("%s. user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), userId)); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", fmt.Sprintf("%s. user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), userId)); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -88,7 +85,7 @@ func (a *userRepository) UpdateUser(user *model.User) error {
 		ToSql()
 	if err != nil {
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -98,7 +95,7 @@ func (a *userRepository) UpdateUser(user *model.User) error {
 	cmdTag, err := a.pgx.Exec(context.Background(), query, args...)
 	if err != nil {
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_FAILED_UPDATE_USER.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_FAILED_UPDATE_USER.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -106,7 +103,7 @@ func (a *userRepository) UpdateUser(user *model.User) error {
 	}
 	if cmdTag.RowsAffected() == 0 {
 		go func() {
-			if err := a.util.EmitLog("ERR", fmt.Sprintf("%s. user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), user.ID)); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", fmt.Sprintf("%s. user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), user.ID)); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -124,7 +121,7 @@ func (a *userRepository) CreateNewUser(user *model.User) error {
 		ToSql()
 	if err != nil {
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -133,7 +130,7 @@ func (a *userRepository) CreateNewUser(user *model.User) error {
 	row := a.pgx.QueryRow(context.Background(), query, args...)
 	if err := row.Scan(&user.ID); err != nil {
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_FAILED_INSERT_USER.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_FAILED_INSERT_USER.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -151,7 +148,7 @@ func (a *userRepository) QueryUserByUserId(userId string) (*model.User, error) {
 		ToSql()
 	if err != nil {
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_FAILED_BUILD_QUERY.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -163,14 +160,14 @@ func (a *userRepository) QueryUserByUserId(userId string) (*model.User, error) {
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			go func() {
-				if err := a.util.EmitLog("WARN", fmt.Sprintf("%s user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), userId)); err != nil {
+				if err := a.logEmitter.EmitLog("WARN", fmt.Sprintf("%s user_id: %s", dto.Err_NOTFOUND_USER_NOT_FOUND.Error(), userId)); err != nil {
 					a.logger.Error().Err(err).Msg("failed to emit log")
 				}
 			}()
 			return nil, dto.Err_NOTFOUND_USER_NOT_FOUND
 		}
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_FAILED_SCAN_USER.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_FAILED_SCAN_USER.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()

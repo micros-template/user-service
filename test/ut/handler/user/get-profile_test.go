@@ -19,13 +19,13 @@ type GetProfileHandlerSuite struct {
 	suite.Suite
 	userHandler     handler.UserHandler
 	mockUserService *mocks.UserServiceMock
-	mockLogEmitter  *mocks.LoggerServiceUtilMock
+	mockLogEmitter  *mocks.LoggerInfraMock
 }
 
 func (g *GetProfileHandlerSuite) SetupSuite() {
 	logger := zerolog.Nop()
 	mockedUserService := new(mocks.UserServiceMock)
-	mockedLogEmitter := new(mocks.LoggerServiceUtilMock)
+	mockedLogEmitter := new(mocks.LoggerInfraMock)
 	g.mockUserService = mockedUserService
 	g.mockLogEmitter = mockedLogEmitter
 	g.userHandler = handler.NewUserHandler(mockedUserService, mockedLogEmitter, logger)

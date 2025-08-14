@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
-	"10.1.20.130/dropping/log-management/pkg"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/infrastructure/cache"
-	"10.1.20.130/dropping/user-service/pkg/utils"
+	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
 	"github.com/rs/zerolog"
 )
 
@@ -18,17 +17,15 @@ type (
 	redisRepository struct {
 		redisClient cache.RedisCache
 		logger      zerolog.Logger
-		logEmitter  pkg.LogEmitter
-		util        utils.LoggerServiceUtil
+		logEmitter  logger.LoggerInfra
 	}
 )
 
-func NewRedisRepository(r cache.RedisCache, logEmitter pkg.LogEmitter, util utils.LoggerServiceUtil, logger zerolog.Logger) RedisRepository {
+func NewRedisRepository(r cache.RedisCache, logEmitter logger.LoggerInfra, logger zerolog.Logger) RedisRepository {
 	return &redisRepository{
 		redisClient: r,
 		logger:      logger,
 		logEmitter:  logEmitter,
-		util:        util,
 	}
 }
 
@@ -36,7 +33,7 @@ func (a *redisRepository) SetResource(c context.Context, key, value string, dura
 	err := a.redisClient.Set(c, key, value, duration)
 	if err != nil {
 		go func() {
-			if err := a.util.EmitLog("ERR", dto.Err_INTERNAL_SET_RESOURCE.Error()); err != nil {
+			if err := a.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_SET_RESOURCE.Error()); err != nil {
 				a.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"10.1.20.130/dropping/user-service/internal/domain/handler"
 	"10.1.20.130/dropping/user-service/internal/infrastructure/grpc"
+	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
@@ -33,6 +35,7 @@ func (s *HTTPServer) Run(ctx context.Context) {
 			nc *nats.Conn,
 			redis *redis.Client,
 			grpcClientManager *grpc.GRPCClientManager,
+			logEmitter logger.LoggerInfra,
 
 		) {
 			defer grpcClientManager.CloseAllConnections()
@@ -56,6 +59,9 @@ func (s *HTTPServer) Run(ctx context.Context) {
 			}
 			go func() {
 				if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					if err := logEmitter.EmitLog("ERR", fmt.Sprintf("failed to listen ans serve http server:%v", err)); err != nil {
+						logger.Error().Err(err).Msg("failed to emit log")
+					}
 					logger.Fatal().Err(err).Msg("Failed to listen and serve http server")
 				}
 			}()
@@ -65,6 +71,9 @@ func (s *HTTPServer) Run(ctx context.Context) {
 					conn, err := net.DialTimeout("tcp", s.Address, 100*time.Millisecond)
 					if err == nil {
 						if err := conn.Close(); err != nil {
+							if err := logEmitter.EmitLog("ERR", fmt.Sprintf("establish check connection failed to close:%v", err)); err != nil {
+								logger.Error().Err(err).Msg("failed to emit log")
+							}
 							logger.Fatal().Err(err).Msg("establish check connection failed to close")
 						}
 						s.ServerReady <- true
@@ -73,14 +82,26 @@ func (s *HTTPServer) Run(ctx context.Context) {
 					time.Sleep(100 * time.Millisecond)
 				}
 			}
+			if err := logEmitter.EmitLog("INFO", fmt.Sprintf("HTTP Server Starting in port %s", s.Address)); err != nil {
+				logger.Error().Err(err).Msg("failed to emit log")
+			}
 			logger.Info().Msgf("HTTP Server Starting in port %s", s.Address)
 
 			<-ctx.Done()
+			if err := logEmitter.EmitLog("INFO", "Shutting down HTTP server..."); err != nil {
+				logger.Error().Err(err).Msg("failed to emit log")
+			}
 			logger.Info().Msg("Shutting down server...")
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			if err := srv.Shutdown(shutdownCtx); err != nil {
+				if err := logEmitter.EmitLog("ERR", fmt.Sprintf("HTTP Server forced to shutdown:%v", err)); err != nil {
+					logger.Error().Err(err).Msg("failed to emit log")
+				}
 				logger.Fatal().Err(err).Msg("Server forced to shutdown")
+			}
+			if err := logEmitter.EmitLog("INFO", "HTTP server exiting..."); err != nil {
+				logger.Error().Err(err).Msg("failed to emit log")
 			}
 			logger.Info().Msg("Server exiting...")
 		})

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/log-management/pkg/mocks"
 	"10.1.20.130/dropping/user-service/internal/domain/repository"
 	mk "10.1.20.130/dropping/user-service/test/mocks"
 	"github.com/rs/zerolog"
@@ -17,19 +16,18 @@ type SetResourceRepositorySuite struct {
 	suite.Suite
 	redisRepository repository.RedisRepository
 	mockRedisClient *mk.MockRedisCache
-	mockUtil        *mk.LoggerServiceUtilMock
+	logEmitter      *mk.LoggerInfraMock
 }
 
 func (s *SetResourceRepositorySuite) SetupSuite() {
 
 	logger := zerolog.Nop()
 	redisClient := new(mk.MockRedisCache)
-	mockUtil := new(mk.LoggerServiceUtilMock)
-	mockLogEmitter := new(mocks.LogEmitterMock)
+	mockLogEmitter := new(mk.LoggerInfraMock)
 
 	s.mockRedisClient = redisClient
-	s.mockUtil = mockUtil
-	s.redisRepository = repository.NewRedisRepository(redisClient, mockLogEmitter, mockUtil, logger)
+	s.logEmitter = mockLogEmitter
+	s.redisRepository = repository.NewRedisRepository(redisClient, mockLogEmitter, logger)
 }
 
 func (s *SetResourceRepositorySuite) SetupTest() {
@@ -52,5 +50,7 @@ func (s *SetResourceRepositorySuite) TestResourceRepository_SetResource_Success(
 
 	s.NoError(err)
 	s.mockRedisClient.AssertExpectations(s.T())
-	s.mockUtil.AssertExpectations(s.T())
+
+	time.Sleep(time.Second)
+	s.logEmitter.AssertExpectations(s.T())
 }

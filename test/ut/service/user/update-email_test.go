@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/log-management/pkg/mocks"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/service"
 	mk "10.1.20.130/dropping/user-service/test/mocks"
@@ -24,7 +23,7 @@ type UpdateEmailServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.LoggerServiceUtilMock
+	logEmitter         *mk.LoggerInfraMock
 }
 
 func (u *UpdateEmailServiceSuite) SetupSuite() {
@@ -34,8 +33,7 @@ func (u *UpdateEmailServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
-	mockLogEmitter := new(mocks.LogEmitterMock)
+	mockLogEmitter := new(mk.LoggerInfraMock)
 
 	logger := zerolog.Nop()
 	u.userRepository = mockUserRepo
@@ -43,8 +41,8 @@ func (u *UpdateEmailServiceSuite) SetupSuite() {
 	u.fileService = mockFileService
 	u.notificationStream = mockNotificationStream
 	u.redisRepository = mockRedisRepository
-	u.mockUtil = mockUserServiceUtil
-	u.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter, mockUserServiceUtil)
+	u.logEmitter = mockLogEmitter
+	u.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter)
 }
 
 func (u *UpdateEmailServiceSuite) SetupTest() {
@@ -53,14 +51,14 @@ func (u *UpdateEmailServiceSuite) SetupTest() {
 	u.fileService.ExpectedCalls = nil
 	u.notificationStream.ExpectedCalls = nil
 	u.redisRepository.ExpectedCalls = nil
-	u.mockUtil.ExpectedCalls = nil
+	u.logEmitter.ExpectedCalls = nil
 
 	u.userRepository.Calls = nil
 	u.eventEmitter.Calls = nil
 	u.fileService.Calls = nil
 	u.notificationStream.Calls = nil
 	u.redisRepository.Calls = nil
-	u.mockUtil.Calls = nil
+	u.logEmitter.Calls = nil
 }
 
 func TestUpdateEmailServiceSuite(t *testing.T) {
@@ -113,7 +111,7 @@ func (u *UpdateEmailServiceSuite) TestUserService_UpdateEmail_JetstreamError() {
 	u.redisRepository.On("SetResource", mock.Anything, "newEmail:"+userId, req.Email, mock.Anything).Return(nil).Once()
 	u.redisRepository.On("SetResource", mock.Anything, "changeEmailToken:"+userId, mock.Anything, mock.Anything).Return(nil).Once()
 	u.notificationStream.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(&jetstream.PubAck{}, errors.New("failed to update email")).Once()
-	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
+	u.logEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdateEmail(req, userId)
 
@@ -122,5 +120,5 @@ func (u *UpdateEmailServiceSuite) TestUserService_UpdateEmail_JetstreamError() {
 	u.notificationStream.AssertExpectations(u.T())
 
 	time.Sleep(time.Second)
-	u.mockUtil.AssertExpectations(u.T())
+	u.logEmitter.AssertExpectations(u.T())
 }

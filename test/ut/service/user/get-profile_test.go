@@ -3,7 +3,6 @@ package service_test
 import (
 	"testing"
 
-	"10.1.20.130/dropping/log-management/pkg/mocks"
 	"10.1.20.130/dropping/sharedlib/model"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/service"
@@ -20,7 +19,6 @@ type GetProfileServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.LoggerServiceUtilMock
 }
 
 func (g *GetProfileServiceSuite) SetupSuite() {
@@ -30,8 +28,7 @@ func (g *GetProfileServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
-	mockLogEmitter := new(mocks.LogEmitterMock)
+	mockLogEmitter := new(mk.LoggerInfraMock)
 
 	logger := zerolog.Nop()
 	g.userRepository = mockUserRepo
@@ -39,8 +36,7 @@ func (g *GetProfileServiceSuite) SetupSuite() {
 	g.fileService = mockFileService
 	g.notificationStream = mockNotificationStream
 	g.redisRepository = mockRedisRepository
-	g.mockUtil = mockUserServiceUtil
-	g.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter, mockUserServiceUtil)
+	g.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter)
 }
 
 func (g *GetProfileServiceSuite) SetupTest() {
@@ -49,14 +45,12 @@ func (g *GetProfileServiceSuite) SetupTest() {
 	g.fileService.ExpectedCalls = nil
 	g.notificationStream.ExpectedCalls = nil
 	g.redisRepository.ExpectedCalls = nil
-	g.mockUtil.ExpectedCalls = nil
 
 	g.userRepository.Calls = nil
 	g.eventEmitter.Calls = nil
 	g.fileService.Calls = nil
 	g.notificationStream.Calls = nil
 	g.redisRepository.Calls = nil
-	g.mockUtil.Calls = nil
 }
 
 func TestGetProfileServiceSuite(t *testing.T) {

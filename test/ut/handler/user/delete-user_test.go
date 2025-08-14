@@ -20,13 +20,13 @@ type DeleteUserHandlerSuite struct {
 	suite.Suite
 	userHandler     handler.UserHandler
 	mockUserService *mocks.UserServiceMock
-	mockLogEmitter  *mocks.LoggerServiceUtilMock
+	mockLogEmitter  *mocks.LoggerInfraMock
 }
 
 func (d *DeleteUserHandlerSuite) SetupSuite() {
 	logger := zerolog.Nop()
 	mockedUserService := new(mocks.UserServiceMock)
-	mockedLogEmitter := new(mocks.LoggerServiceUtilMock)
+	mockedLogEmitter := new(mocks.LoggerInfraMock)
 	d.mockUserService = mockedUserService
 	d.mockLogEmitter = mockedLogEmitter
 	d.userHandler = handler.NewUserHandler(mockedUserService, mockedLogEmitter, logger)

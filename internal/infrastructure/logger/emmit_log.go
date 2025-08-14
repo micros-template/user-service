@@ -1,4 +1,4 @@
-package utils
+package logger
 
 import (
 	"context"
@@ -7,21 +7,21 @@ import (
 	ld "10.1.20.130/dropping/log-management/pkg/dto"
 )
 
-type LoggerServiceUtil interface {
+type LoggerInfra interface {
 	EmitLog(msgType, msg string) error
 }
 
-type loggerServiceUtil struct {
+type loggerInfra struct {
 	logEmitter pkg.LogEmitter
 }
 
-func NewUserServiceUtil(logEmitter pkg.LogEmitter) LoggerServiceUtil {
-	return &loggerServiceUtil{
+func NewLoggerInfra(logEmitter pkg.LogEmitter) LoggerInfra {
+	return &loggerInfra{
 		logEmitter: logEmitter,
 	}
 }
 
-func (u *loggerServiceUtil) EmitLog(msgType, msg string) error {
+func (u *loggerInfra) EmitLog(msgType, msg string) error {
 	if err := u.logEmitter.EmitLog(context.Background(), ld.LogMessage{
 		Type:     msgType,
 		Service:  "user_service",

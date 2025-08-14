@@ -20,13 +20,13 @@ type ChangeEmailHandlerSuite struct {
 	suite.Suite
 	userHandler     handler.UserHandler
 	mockUserService *mocks.UserServiceMock
-	mockLogEmitter  *mocks.LoggerServiceUtilMock
+	mockLogEmitter  *mocks.LoggerInfraMock
 }
 
 func (c *ChangeEmailHandlerSuite) SetupSuite() {
 	logger := zerolog.Nop()
 	mockedUserService := new(mocks.UserServiceMock)
-	mockedLogEmitterService := new(mocks.LoggerServiceUtilMock)
+	mockedLogEmitterService := new(mocks.LoggerInfraMock)
 	c.mockUserService = mockedUserService
 	c.mockLogEmitter = mockedLogEmitterService
 	c.userHandler = handler.NewUserHandler(mockedUserService, mockedLogEmitterService, logger)

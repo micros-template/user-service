@@ -20,13 +20,13 @@ type ChangePasswordHandlerSuite struct {
 	suite.Suite
 	userHandler     handler.UserHandler
 	mockUserService *mocks.UserServiceMock
-	mockLogEmitter  *mocks.LoggerServiceUtilMock
+	mockLogEmitter  *mocks.LoggerInfraMock
 }
 
 func (c *ChangePasswordHandlerSuite) SetupSuite() {
 	logger := zerolog.Nop()
 	mockedUserService := new(mocks.UserServiceMock)
-	mockedLogEmitter := new(mocks.LoggerServiceUtilMock)
+	mockedLogEmitter := new(mocks.LoggerInfraMock)
 	c.mockUserService = mockedUserService
 	c.mockLogEmitter = mockedLogEmitter
 	c.userHandler = handler.NewUserHandler(mockedUserService, mockedLogEmitter, logger)

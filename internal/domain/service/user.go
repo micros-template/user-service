@@ -8,16 +8,15 @@ import (
 	"time"
 
 	"10.1.20.130/dropping/event-bus-client/pkg/event"
-	"10.1.20.130/dropping/log-management/pkg"
 	"10.1.20.130/dropping/proto-file/pkg/fpb"
 	"10.1.20.130/dropping/proto-user/pkg/upb"
 	_dto "10.1.20.130/dropping/sharedlib/dto"
 	"10.1.20.130/dropping/sharedlib/utils"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/repository"
+	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
 	_mq "10.1.20.130/dropping/user-service/internal/infrastructure/message-queue"
 	"10.1.20.130/dropping/user-service/pkg/constant"
-	u "10.1.20.130/dropping/user-service/pkg/utils"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
@@ -37,8 +36,7 @@ type (
 		redisRepository    repository.RedisRepository
 		notificationStream _mq.Nats
 		eventEmitter       event.Emitter
-		logEmitter         pkg.LogEmitter
-		util               u.LoggerServiceUtil
+		logEmitter         logger.LoggerInfra
 	}
 )
 
@@ -48,8 +46,7 @@ func NewUserService(userRepo repository.UserRepository,
 	redisRepository repository.RedisRepository,
 	notificationStream _mq.Nats,
 	eventEmitter event.Emitter,
-	logEmitter pkg.LogEmitter,
-	util u.LoggerServiceUtil,
+	logEmitter logger.LoggerInfra,
 ) UserService {
 	return &userService{
 		userRepository:     userRepo,
@@ -59,7 +56,6 @@ func NewUserService(userRepo repository.UserRepository,
 		notificationStream: notificationStream,
 		eventEmitter:       eventEmitter,
 		logEmitter:         logEmitter,
-		util:               util,
 	}
 }
 
@@ -72,7 +68,7 @@ func (u *userService) DeleteUser(req *dto.DeleteUserRequest, userId string) erro
 	ok := utils.HashPasswordCompare(req.Password, user.Password)
 	if !ok {
 		go func() {
-			if err := u.util.EmitLog("ERR", dto.Err_UNAUTHORIZED_PASSWORD_WRONG.Error()); err != nil {
+			if err := u.logEmitter.EmitLog("ERR", dto.Err_UNAUTHORIZED_PASSWORD_WRONG.Error()); err != nil {
 				u.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -92,7 +88,7 @@ func (u *userService) DeleteUser(req *dto.DeleteUserRequest, userId string) erro
 func (u *userService) UpdatePassword(req *dto.UpdatePasswordRequest, userId string) error {
 	if req.NewPassword != req.ConfirmNewPassword {
 		go func() {
-			if err := u.util.EmitLog("ERR", dto.Err_BAD_REQUEST_PASSWORD_CONFIRM_PASSWORD_DOESNT_MATCH.Error()); err != nil {
+			if err := u.logEmitter.EmitLog("ERR", dto.Err_BAD_REQUEST_PASSWORD_CONFIRM_PASSWORD_DOESNT_MATCH.Error()); err != nil {
 				u.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -105,7 +101,7 @@ func (u *userService) UpdatePassword(req *dto.UpdatePasswordRequest, userId stri
 	ok := utils.HashPasswordCompare(req.Password, user.Password)
 	if !ok {
 		go func() {
-			if err := u.util.EmitLog("ERR", dto.Err_UNAUTHORIZED_PASSWORD_WRONG.Error()); err != nil {
+			if err := u.logEmitter.EmitLog("ERR", dto.Err_UNAUTHORIZED_PASSWORD_WRONG.Error()); err != nil {
 				u.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -114,7 +110,7 @@ func (u *userService) UpdatePassword(req *dto.UpdatePasswordRequest, userId stri
 	newPassword, err := utils.HashPassword(req.NewPassword)
 	if err != nil {
 		go func() {
-			if err := u.util.EmitLog("ERR", fmt.Sprintf("Hash Password Error: %v", err.Error())); err != nil {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("Hash Password Error: %v", err.Error())); err != nil {
 				u.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -145,7 +141,7 @@ func (u *userService) UpdateEmail(req *dto.UpdateEmailRequest, userId string) er
 	verificationToken, err := utils.RandomString64()
 	if err != nil {
 		go func() {
-			if err := u.util.EmitLog("ERR", dto.Err_INTERNAL_GENERATE_TOKEN.Error()); err != nil {
+			if err := u.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_GENERATE_TOKEN.Error()); err != nil {
 				u.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -172,7 +168,7 @@ func (u *userService) UpdateEmail(req *dto.UpdateEmailRequest, userId string) er
 	marshalledMsg, err := json.Marshal(msg)
 	if err != nil {
 		go func() {
-			if err := u.util.EmitLog("ERR", "marshal data error"); err != nil {
+			if err := u.logEmitter.EmitLog("ERR", "marshal data error"); err != nil {
 				u.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -181,7 +177,7 @@ func (u *userService) UpdateEmail(req *dto.UpdateEmailRequest, userId string) er
 	_, err = u.notificationStream.Publish(ctx, subject, []byte(marshalledMsg))
 	if err != nil {
 		go func() {
-			if err := u.util.EmitLog("ERR", dto.Err_INTERNAL_PUBLISH_MESSAGE.Error()); err != nil {
+			if err := u.logEmitter.EmitLog("ERR", dto.Err_INTERNAL_PUBLISH_MESSAGE.Error()); err != nil {
 				u.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
@@ -209,7 +205,7 @@ func (u *userService) UpdateUser(req *dto.UpdateUserRequest, userId string) erro
 		ext := utils.GetFileNameExtension(req.Image.Filename)
 		if ext != "jpg" && ext != "jpeg" && ext != "png" {
 			go func() {
-				if err := u.util.EmitLog("ERR", dto.Err_BAD_REQUEST_WRONG_EXTENSION.Error()); err != nil {
+				if err := u.logEmitter.EmitLog("ERR", dto.Err_BAD_REQUEST_WRONG_EXTENSION.Error()); err != nil {
 					u.logger.Error().Err(err).Msg("failed to emit log")
 				}
 			}()
@@ -217,7 +213,7 @@ func (u *userService) UpdateUser(req *dto.UpdateUserRequest, userId string) erro
 		}
 		if req.Image.Size > constant.MAX_UPLOAD_SIZE {
 			go func() {
-				if err := u.util.EmitLog("ERR", dto.Err_BAD_REQUEST_LIMIT_SIZE_EXCEEDED.Error()); err != nil {
+				if err := u.logEmitter.EmitLog("ERR", dto.Err_BAD_REQUEST_LIMIT_SIZE_EXCEEDED.Error()); err != nil {
 					u.logger.Error().Err(err).Msg("failed to emit log")
 				}
 			}()
@@ -226,7 +222,7 @@ func (u *userService) UpdateUser(req *dto.UpdateUserRequest, userId string) erro
 		image, err := utils.FileToByte(req.Image)
 		if err != nil {
 			go func() {
-				if err := u.util.EmitLog("ERR", "error converting image to byte"); err != nil {
+				if err := u.logEmitter.EmitLog("ERR", "error converting image to byte"); err != nil {
 					u.logger.Error().Err(err).Msg("failed to emit log")
 				}
 			}()
@@ -239,7 +235,7 @@ func (u *userService) UpdateUser(req *dto.UpdateUserRequest, userId string) erro
 		resp, err := u.fileServiceClient.SaveProfileImage(ctx, imageReq)
 		if err != nil {
 			go func() {
-				if err := u.util.EmitLog("ERR", fmt.Sprintf("Error uploading image to file service. err: %v", err.Error())); err != nil {
+				if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("Error uploading image to file service. err: %v", err.Error())); err != nil {
 					u.logger.Error().Err(err).Msg("failed to emit log")
 				}
 			}()
@@ -251,21 +247,21 @@ func (u *userService) UpdateUser(req *dto.UpdateUserRequest, userId string) erro
 	if err == nil && req.Image != nil && req.Image.Filename != "" {
 		if _, err := u.fileServiceClient.RemoveProfileImage(ctx, &fpb.ImageName{Name: *user.Image}); err != nil {
 			go func() {
-				if err := u.util.EmitLog("ERR", fmt.Sprintf("Error remove image via file service. err: %v", err.Error())); err != nil {
+				if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("Error remove image via file service. err: %v", err.Error())); err != nil {
 					u.logger.Error().Err(err).Msg("failed to emit log")
 				}
 			}()
 		}
 	} else if err != nil {
 		go func() {
-			if err := u.util.EmitLog("ERR", fmt.Sprintf("update user failed. err: %v", err.Error())); err != nil {
+			if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("update user failed. err: %v", err.Error())); err != nil {
 				u.logger.Error().Err(err).Msg("failed to emit log")
 			}
 		}()
 		if req.Image != nil && req.Image.Filename != "" {
 			if _, err := u.fileServiceClient.RemoveProfileImage(ctx, &fpb.ImageName{Name: *us.Image}); err != nil {
 				go func() {
-					if err := u.util.EmitLog("ERR", fmt.Sprintf("Error remove image via file service. err: %v", err.Error())); err != nil {
+					if err := u.logEmitter.EmitLog("ERR", fmt.Sprintf("Error remove image via file service. err: %v", err.Error())); err != nil {
 						u.logger.Error().Err(err).Msg("failed to emit log")
 					}
 				}()

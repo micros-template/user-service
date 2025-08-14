@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/log-management/pkg/mocks"
 	"10.1.20.130/dropping/sharedlib/model"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/service"
@@ -22,7 +21,7 @@ type UpdatePasswordServiceSuite struct {
 	fileService        *mk.MockFileServiceClient
 	notificationStream *mk.MockNatsInfra
 	redisRepository    *mk.MockRedisRepository
-	mockUtil           *mk.LoggerServiceUtilMock
+	logEmitter         *mk.LoggerInfraMock
 }
 
 func (u *UpdatePasswordServiceSuite) SetupSuite() {
@@ -32,8 +31,7 @@ func (u *UpdatePasswordServiceSuite) SetupSuite() {
 	mockFileService := new(mk.MockFileServiceClient)
 	mockNotificationStream := new(mk.MockNatsInfra)
 	mockRedisRepository := new(mk.MockRedisRepository)
-	mockUserServiceUtil := new(mk.LoggerServiceUtilMock)
-	mockLogEmitter := new(mocks.LogEmitterMock)
+	mockLogEmitter := new(mk.LoggerInfraMock)
 
 	logger := zerolog.Nop()
 	u.userRepository = mockUserRepo
@@ -41,8 +39,8 @@ func (u *UpdatePasswordServiceSuite) SetupSuite() {
 	u.fileService = mockFileService
 	u.notificationStream = mockNotificationStream
 	u.redisRepository = mockRedisRepository
-	u.mockUtil = mockUserServiceUtil
-	u.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter, mockUserServiceUtil)
+	u.logEmitter = mockLogEmitter
+	u.userService = service.NewUserService(mockUserRepo, logger, mockFileService, mockRedisRepository, mockNotificationStream, mockEventEmitter, mockLogEmitter)
 }
 
 func (u *UpdatePasswordServiceSuite) SetupTest() {
@@ -51,14 +49,14 @@ func (u *UpdatePasswordServiceSuite) SetupTest() {
 	u.fileService.ExpectedCalls = nil
 	u.notificationStream.ExpectedCalls = nil
 	u.redisRepository.ExpectedCalls = nil
-	u.mockUtil.ExpectedCalls = nil
+	u.logEmitter.ExpectedCalls = nil
 
 	u.userRepository.Calls = nil
 	u.eventEmitter.Calls = nil
 	u.fileService.Calls = nil
 	u.notificationStream.Calls = nil
 	u.redisRepository.Calls = nil
-	u.mockUtil.Calls = nil
+	u.logEmitter.Calls = nil
 }
 
 func TestUpdatePasswordServiceSuite(t *testing.T) {
@@ -115,14 +113,14 @@ func (u *UpdatePasswordServiceSuite) TestUserService_UpdatePassword_PasswordDoes
 		NewPassword:        "new-password",
 		ConfirmNewPassword: "new-password123",
 	}
-	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
+	u.logEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdatePassword(req, "userid-123")
 
 	u.Error(err)
 	u.userRepository.AssertExpectations(u.T())
 	time.Sleep(time.Second)
-	u.mockUtil.AssertExpectations(u.T())
+	u.logEmitter.AssertExpectations(u.T())
 }
 
 func (u *UpdatePasswordServiceSuite) TestUserService_UpdatePassword_WrongPassword() {
@@ -141,12 +139,12 @@ func (u *UpdatePasswordServiceSuite) TestUserService_UpdatePassword_WrongPasswor
 		Password: oldPassword,
 	}
 	u.userRepository.On("QueryUserByUserId", userId).Return(user, nil)
-	u.mockUtil.On("EmitLog", "ERR", mock.Anything).Return(nil)
+	u.logEmitter.On("EmitLog", "ERR", mock.Anything).Return(nil)
 
 	err := u.userService.UpdatePassword(req, userId)
 
 	u.Error(err)
 	u.userRepository.AssertExpectations(u.T())
 	time.Sleep(time.Second)
-	u.mockUtil.AssertExpectations(u.T())
+	u.logEmitter.AssertExpectations(u.T())
 }

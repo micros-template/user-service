@@ -7,7 +7,7 @@ import (
 	"10.1.20.130/dropping/sharedlib/utils"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/service"
-	u "10.1.20.130/dropping/user-service/pkg/utils"
+	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
@@ -25,11 +25,11 @@ type (
 	userHandler struct {
 		userService service.UserService
 		logger      zerolog.Logger
-		logEmitter  u.LoggerServiceUtil
+		logEmitter  logger.LoggerInfra
 	}
 )
 
-func NewUserHandler(userService service.UserService, logEmitter u.LoggerServiceUtil, logger zerolog.Logger) UserHandler {
+func NewUserHandler(userService service.UserService, logEmitter logger.LoggerInfra, logger zerolog.Logger) UserHandler {
 	return &userHandler{
 		userService: userService,
 		logger:      logger,
