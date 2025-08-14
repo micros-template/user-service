@@ -79,11 +79,14 @@ func (d *DeleteUserServiceSuite) TestUserService_DeleteUser_Success() {
 	}
 	d.userRepository.On("QueryUserByUserId", "userid-123").Return(&u, nil)
 	d.userRepository.On("DeleteUser", "userid-123").Return(nil)
-
+	d.eventEmitter.On("DeleteUser", mock.Anything, mock.Anything).Return(nil).Once()
 	err := d.userService.DeleteUser(&req, "userid-123")
 
 	d.NoError(err)
 	d.userRepository.AssertExpectations(d.T())
+
+	time.Sleep(time.Second)
+	d.eventEmitter.AssertExpectations(d.T())
 }
 func (d *DeleteUserServiceSuite) TestUserService_DeleteUser_UserNotFound() {
 	req := dto.DeleteUserRequest{

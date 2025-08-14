@@ -50,3 +50,16 @@ func (a *AuthGrpcHandler) UpdateUser(c context.Context, user *upb.User) (*upb.St
 	}
 	return &upb.Status{Success: true}, nil
 }
+
+func (a *AuthGrpcHandler) DeleteUser(c context.Context, user *upb.UserId) (*upb.Status, error) {
+	if err := a.authService.DeleteUser(c, user); err != nil {
+		switch err {
+		case dto.Err_NOTFOUND_USER_NOT_FOUND:
+			return nil, _status.Error(codes.NotFound, err.Error())
+		case dto.Err_INTERNAL_FAILED_BUILD_QUERY, dto.Err_INTERNAL_FAILED_DELETE_USER:
+			return nil, _status.Error(codes.Internal, err.Error())
+		}
+		return nil, _status.Error(codes.Internal, err.Error())
+	}
+	return &upb.Status{Success: true}, nil
+}

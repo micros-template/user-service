@@ -15,6 +15,7 @@ type (
 	AuthService interface {
 		CreateUser(*upb.User) (*upb.Status, error)
 		UpdateUser(c context.Context, user *upb.User) error
+		DeleteUser(c context.Context, userId *upb.UserId) error
 	}
 	authService struct {
 		userRepository repository.UserRepository
@@ -86,4 +87,15 @@ func (a *authService) CreateUser(user *upb.User) (*upb.Status, error) {
 		})
 	}()
 	return &upb.Status{Success: true}, nil
+}
+
+func (a *authService) DeleteUser(c context.Context, userId *upb.UserId) error {
+	if err := a.userRepository.DeleteUser(userId.GetUserId()); err != nil {
+		return err
+	}
+	// push event bus in goroutine
+	go func() {
+		a.eventEmitter.DeleteUser(context.Background(), userId)
+	}()
+	return nil
 }

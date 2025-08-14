@@ -81,6 +81,11 @@ func (u *userService) DeleteUser(req *dto.DeleteUserRequest, userId string) erro
 	if err := u.userRepository.DeleteUser(userId); err != nil {
 		return err
 	}
+	go func() {
+		u.eventEmitter.DeleteUser(context.Background(), &upb.UserId{
+			UserId: userId,
+		})
+	}()
 	return nil
 }
 

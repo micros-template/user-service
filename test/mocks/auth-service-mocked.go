@@ -21,3 +21,8 @@ func (m *MockAuthService) UpdateUser(ctx context.Context, user *upb.User) error 
 	args := m.Called(ctx, user)
 	return args.Error(0)
 }
+
+func (m *MockAuthService) DeleteUser(ctx context.Context, user *upb.UserId) error {
+	args := m.Called(ctx, user)
+	return args.Error(0)
+}

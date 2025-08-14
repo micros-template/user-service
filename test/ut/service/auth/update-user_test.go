@@ -60,6 +60,9 @@ func (u *UpdateUserAuthServiceSuite) TestAuthService_UpdateUser_Success() {
 	err := u.authService.UpdateUser(context.TODO(), user)
 	u.NoError(err)
 	u.userRepository.AssertExpectations(u.T())
+
+	time.Sleep(time.Second)
+	u.eventEmitter.AssertExpectations(u.T())
 }
 
 func (u *UpdateUserAuthServiceSuite) TestAuthService_UpdateUser_RepoError() {
