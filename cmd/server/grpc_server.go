@@ -40,9 +40,11 @@ func (s *GRPCServer) Run(ctx context.Context) {
 
 		go func() {
 			if serveErr := grpcServer.Serve(listen); serveErr != nil {
-				if err := logEmitter.EmitLog("ERR", fmt.Sprintf("failed to listen an serve gRPC server:%v", err)); err != nil {
-					logger.Error().Err(err).Msg("failed to emit log")
-				}
+				go func() {
+					if err := logEmitter.EmitLog("ERR", fmt.Sprintf("failed to listen an serve gRPC server:%v", err)); err != nil {
+						logger.Error().Err(err).Msg("failed to emit log")
+					}
+				}()
 				logger.Fatal().Msgf("failed to listen an serve gRPC server: %v", serveErr)
 			}
 		}()
@@ -52,9 +54,11 @@ func (s *GRPCServer) Run(ctx context.Context) {
 				conn, err := net.DialTimeout("tcp", s.Address, 100*time.Millisecond)
 				if err == nil {
 					if err := conn.Close(); err != nil {
-						if err := logEmitter.EmitLog("ERR", fmt.Sprintf("establish check connection failed to close:%v", err)); err != nil {
-							logger.Error().Err(err).Msg("failed to emit log")
-						}
+						go func() {
+							if err := logEmitter.EmitLog("ERR", fmt.Sprintf("establish check connection failed to close:%v", err)); err != nil {
+								logger.Error().Err(err).Msg("failed to emit log")
+							}
+						}()
 					}
 					s.ServerReady <- true
 					break
@@ -63,20 +67,27 @@ func (s *GRPCServer) Run(ctx context.Context) {
 			}
 		}
 
-		if err := logEmitter.EmitLog("INFO", fmt.Sprintf("gRPC server running in port %s", s.Address)); err != nil {
-			logger.Error().Err(err).Msg("failed to emit log")
-		}
+		go func() {
+			if err := logEmitter.EmitLog("INFO", fmt.Sprintf("gRPC server running in port %s", s.Address)); err != nil {
+				logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		logger.Info().Msg("gRPC server running in port " + s.Address)
 		<-ctx.Done()
-		if err := logEmitter.EmitLog("INFO", "Shutting down gRPC server..."); err != nil {
-			logger.Error().Err(err).Msg("failed to emit log")
-		}
+
+		go func() {
+			if err := logEmitter.EmitLog("INFO", "Shutting down gRPC server..."); err != nil {
+				logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		logger.Info().Msg("Shutting down gRPC server...")
 		grpcServer.GracefulStop()
 
-		if err := logEmitter.EmitLog("INFO", "gRPC server stopped gracefully."); err != nil {
-			logger.Error().Err(err).Msg("failed to emit log")
-		}
+		go func() {
+			if err := logEmitter.EmitLog("INFO", "gRPC server stopped gracefully."); err != nil {
+				logger.Error().Err(err).Msg("failed to emit log")
+			}
+		}()
 		logger.Info().Msg("gRPC server stopped gracefully.")
 	})
 	if err != nil {
