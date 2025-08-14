@@ -1,8 +1,8 @@
 package eventbus
 
 import (
+	"10.1.20.130/dropping/event-bus-client/pkg/event"
 	"10.1.20.130/dropping/log-management/pkg"
-	"github.com/dropboks/event-bus-client/pkg/event"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"

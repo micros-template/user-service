@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"10.1.20.130/dropping/log-management/pkg/mocks"
+	"10.1.20.130/dropping/sharedlib/model"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/repository"
 	mk "10.1.20.130/dropping/user-service/test/mocks"
-	"github.com/dropboks/sharedlib/model"
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/rs/zerolog"

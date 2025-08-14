@@ -3,12 +3,12 @@ module 10.1.20.130/dropping/user-service
 go 1.24.2
 
 require (
+	10.1.20.130/dropping/event-bus-client v0.0.0-20250813095137-aac18622526d
 	10.1.20.130/dropping/log-management v0.0.0-20250808075433-1d4dd15b3fc7
+	10.1.20.130/dropping/proto-file v0.0.0-20250714044208-bb76fb12882b
+	10.1.20.130/dropping/proto-user v0.0.0-20250813092555-cb617340c1c5
+	10.1.20.130/dropping/sharedlib v0.0.0-20250807080415-3baef044f7f4
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/dropboks/event-bus-client v0.0.0-20250708092155-e109e3ad4b52
-	github.com/dropboks/proto-file v0.0.0-20250609044313-a7f78b2c48bf
-	github.com/dropboks/proto-user v0.0.0-20250709010613-66c877f96ac7
-	github.com/dropboks/sharedlib v0.0.0-20250711072608-b2ae226cfddf
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.10.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
@@ -28,14 +28,8 @@ require (
 	google.golang.org/grpc v1.74.2
 )
 
-replace (
-	github.com/dropboks/event-bus-client => 10.1.20.130/dropping/event-bus-client v0.0.0-20250808061922-4a60fc1ec26c
-	github.com/dropboks/proto-file => 10.1.20.130/dropping/proto-file v0.0.0-20250714044208-bb76fb12882b
-	github.com/dropboks/proto-user => 10.1.20.130/dropping/proto-user v0.0.0-20250714041933-087deb5804ce
-	github.com/dropboks/sharedlib => 10.1.20.130/dropping/sharedlib v0.0.0-20250807080415-3baef044f7f4
-)
-
 require (
+	10.1.20.130/dropping/proto-event v0.0.0-20250714041729-deef4f93d371 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
@@ -56,7 +50,7 @@ require (
 	github.com/docker/docker v28.3.3+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/dropboks/proto-event v0.0.0-20250708021719-ce25723e7fdb // indirect
+	github.com/dropboks/sharedlib v0.0.0-20250711072608-b2ae226cfddf // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect

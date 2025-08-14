@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/dropboks/sharedlib/model"
+	"10.1.20.130/dropping/sharedlib/model"
 	"github.com/stretchr/testify/mock"
 )
 

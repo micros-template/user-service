@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
+	"10.1.20.130/dropping/event-bus-client/pkg/event"
+	"10.1.20.130/dropping/proto-user/pkg/upb"
+	"10.1.20.130/dropping/sharedlib/model"
+	"10.1.20.130/dropping/sharedlib/utils"
 	"10.1.20.130/dropping/user-service/internal/domain/repository"
-	"github.com/dropboks/event-bus-client/pkg/event"
-	"github.com/dropboks/proto-user/pkg/upb"
-	"github.com/dropboks/sharedlib/model"
-	"github.com/dropboks/sharedlib/utils"
 	"github.com/rs/zerolog"
 )
 

@@ -6,11 +6,11 @@ import (
 	"fmt"
 
 	"10.1.20.130/dropping/log-management/pkg"
+	"10.1.20.130/dropping/sharedlib/model"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
 	"10.1.20.130/dropping/user-service/pkg/utils"
 	sq "github.com/Masterminds/squirrel"
-	"github.com/dropboks/sharedlib/model"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
 )

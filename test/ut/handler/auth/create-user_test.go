@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"10.1.20.130/dropping/proto-user/pkg/upb"
 	"10.1.20.130/dropping/user-service/internal/domain/dto"
 	"10.1.20.130/dropping/user-service/internal/domain/handler"
 	"10.1.20.130/dropping/user-service/test/mocks"
-	"github.com/dropboks/proto-user/pkg/upb"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

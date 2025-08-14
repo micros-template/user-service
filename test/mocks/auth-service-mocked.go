@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/dropboks/proto-user/pkg/upb"
+	"10.1.20.130/dropping/proto-user/pkg/upb"
 	"github.com/stretchr/testify/mock"
 )
 
