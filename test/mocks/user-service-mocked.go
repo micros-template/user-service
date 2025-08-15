@@ -1,7 +1,8 @@
 package mocks
 
 import (
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/internal/domain/dto"
+
 	"github.com/stretchr/testify/mock"
 )
 

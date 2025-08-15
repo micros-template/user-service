@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"10.1.20.130/dropping/sharedlib/utils"
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	"10.1.20.130/dropping/user-service/internal/domain/service"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/internal/domain/service"
+	"github.com/micros-template/user-service/internal/infrastructure/logger"
+
 	"github.com/gin-gonic/gin"
+	"github.com/micros-template/sharedlib/utils"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

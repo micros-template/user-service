@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"10.1.20.130/dropping/sharedlib/model"
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	_db "github.com/micros-template/user-service/internal/infrastructure/database"
+	"github.com/micros-template/user-service/internal/infrastructure/logger"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
+	"github.com/micros-template/sharedlib/model"
 	"github.com/rs/zerolog"
 )
 

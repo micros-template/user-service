@@ -1,21 +1,22 @@
 package di
 
 import (
-	"10.1.20.130/dropping/user-service/config/cache"
-	db "10.1.20.130/dropping/user-service/config/database"
-	logemitter "10.1.20.130/dropping/user-service/config/log_emitter"
-	"10.1.20.130/dropping/user-service/config/logger"
-	mq "10.1.20.130/dropping/user-service/config/message-queue"
-	"10.1.20.130/dropping/user-service/config/router"
-	"10.1.20.130/dropping/user-service/internal/domain/handler"
-	"10.1.20.130/dropping/user-service/internal/domain/repository"
-	"10.1.20.130/dropping/user-service/internal/domain/service"
-	_cache "10.1.20.130/dropping/user-service/internal/infrastructure/cache"
-	_db "10.1.20.130/dropping/user-service/internal/infrastructure/database"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/eventbus"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/grpc"
-	_logger "10.1.20.130/dropping/user-service/internal/infrastructure/logger"
-	_mq "10.1.20.130/dropping/user-service/internal/infrastructure/message-queue"
+	"github.com/micros-template/user-service/config/cache"
+	db "github.com/micros-template/user-service/config/database"
+	logemitter "github.com/micros-template/user-service/config/log_emitter"
+	"github.com/micros-template/user-service/config/logger"
+	mq "github.com/micros-template/user-service/config/message-queue"
+	"github.com/micros-template/user-service/config/router"
+	"github.com/micros-template/user-service/internal/domain/handler"
+	"github.com/micros-template/user-service/internal/domain/repository"
+	"github.com/micros-template/user-service/internal/domain/service"
+	_cache "github.com/micros-template/user-service/internal/infrastructure/cache"
+	_db "github.com/micros-template/user-service/internal/infrastructure/database"
+	"github.com/micros-template/user-service/internal/infrastructure/eventbus"
+	"github.com/micros-template/user-service/internal/infrastructure/grpc"
+	_logger "github.com/micros-template/user-service/internal/infrastructure/logger"
+	_mq "github.com/micros-template/user-service/internal/infrastructure/message-queue"
+
 	"go.uber.org/dig"
 )
 

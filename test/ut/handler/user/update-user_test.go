@@ -10,9 +10,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	"10.1.20.130/dropping/user-service/internal/domain/handler"
-	"10.1.20.130/dropping/user-service/test/mocks"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/internal/domain/handler"
+	"github.com/micros-template/user-service/test/mocks"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"

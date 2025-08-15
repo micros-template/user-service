@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"10.1.20.130/dropping/proto-user/pkg/upb"
+	"github.com/micros-template/proto-user/pkg/upb"
 	"github.com/stretchr/testify/mock"
 )
 

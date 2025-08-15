@@ -1,7 +1,8 @@
 package messagequeue
 
 import (
-	_mq "10.1.20.130/dropping/user-service/internal/infrastructure/message-queue"
+	_mq "github.com/micros-template/user-service/internal/infrastructure/message-queue"
+
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )

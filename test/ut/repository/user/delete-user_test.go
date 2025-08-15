@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	"10.1.20.130/dropping/user-service/internal/domain/repository"
-	mk "10.1.20.130/dropping/user-service/test/mocks"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/internal/domain/repository"
+	mk "github.com/micros-template/user-service/test/mocks"
+
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"

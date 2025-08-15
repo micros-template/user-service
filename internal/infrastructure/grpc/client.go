@@ -1,7 +1,7 @@
 package grpc
 
 import (
-	fileProto "10.1.20.130/dropping/proto-file/pkg/fpb"
+	fileProto "github.com/micros-template/proto-file/pkg/fpb"
 	"github.com/spf13/viper"
 )
 

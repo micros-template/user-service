@@ -7,16 +7,18 @@ import (
 	"strings"
 	"time"
 
-	"10.1.20.130/dropping/event-bus-client/pkg/event"
-	"10.1.20.130/dropping/proto-file/pkg/fpb"
-	"10.1.20.130/dropping/proto-user/pkg/upb"
-	_dto "10.1.20.130/dropping/sharedlib/dto"
-	"10.1.20.130/dropping/sharedlib/utils"
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	"10.1.20.130/dropping/user-service/internal/domain/repository"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
-	_mq "10.1.20.130/dropping/user-service/internal/infrastructure/message-queue"
-	"10.1.20.130/dropping/user-service/pkg/constant"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/internal/domain/repository"
+	"github.com/micros-template/user-service/internal/infrastructure/logger"
+	_mq "github.com/micros-template/user-service/internal/infrastructure/message-queue"
+	"github.com/micros-template/user-service/pkg/constant"
+
+	"github.com/micros-template/event-bus-client/pkg/event"
+
+	"github.com/micros-template/proto-file/pkg/fpb"
+	"github.com/micros-template/proto-user/pkg/upb"
+	_dto "github.com/micros-template/sharedlib/dto"
+	"github.com/micros-template/sharedlib/utils"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )

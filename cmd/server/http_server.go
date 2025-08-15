@@ -8,9 +8,10 @@ import (
 	"net/http"
 	"time"
 
-	"10.1.20.130/dropping/user-service/internal/domain/handler"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/grpc"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
+	"github.com/micros-template/user-service/internal/domain/handler"
+	"github.com/micros-template/user-service/internal/infrastructure/grpc"
+	"github.com/micros-template/user-service/internal/infrastructure/logger"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"

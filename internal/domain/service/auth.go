@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 
-	"10.1.20.130/dropping/event-bus-client/pkg/event"
-	"10.1.20.130/dropping/proto-user/pkg/upb"
-	"10.1.20.130/dropping/sharedlib/model"
-	"10.1.20.130/dropping/sharedlib/utils"
-	"10.1.20.130/dropping/user-service/internal/domain/repository"
+	"github.com/micros-template/user-service/internal/domain/repository"
+
+	"github.com/micros-template/event-bus-client/pkg/event"
+
+	"github.com/micros-template/proto-user/pkg/upb"
+	"github.com/micros-template/sharedlib/model"
+	"github.com/micros-template/sharedlib/utils"
 	"github.com/rs/zerolog"
 )
 

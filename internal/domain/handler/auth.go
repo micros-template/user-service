@@ -3,9 +3,10 @@ package handler
 import (
 	"context"
 
-	upb "10.1.20.130/dropping/proto-user/pkg/upb"
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	"10.1.20.130/dropping/user-service/internal/domain/service"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/internal/domain/service"
+
+	upb "github.com/micros-template/proto-user/pkg/upb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	_status "google.golang.org/grpc/status"

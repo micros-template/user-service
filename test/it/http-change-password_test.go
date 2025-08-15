@@ -11,10 +11,11 @@ import (
 	"testing"
 	"time"
 
-	_helper "10.1.20.130/dropping/sharedlib/test/helper"
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	"10.1.20.130/dropping/user-service/test/helper"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/test/helper"
+
 	"github.com/gin-gonic/gin"
+	_helper "github.com/micros-template/sharedlib/test/helper"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"

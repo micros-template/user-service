@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/proto-user/pkg/upb"
-	"10.1.20.130/dropping/sharedlib/model"
-	"10.1.20.130/dropping/sharedlib/utils"
-	"10.1.20.130/dropping/user-service/internal/domain/service"
-	"10.1.20.130/dropping/user-service/test/mocks"
+	"github.com/micros-template/user-service/internal/domain/service"
+	"github.com/micros-template/user-service/test/mocks"
+
+	"github.com/micros-template/proto-user/pkg/upb"
+	"github.com/micros-template/sharedlib/model"
+	"github.com/micros-template/sharedlib/utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"

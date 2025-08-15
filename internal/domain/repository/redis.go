@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/cache"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/internal/infrastructure/cache"
+	"github.com/micros-template/user-service/internal/infrastructure/logger"
+
 	"github.com/rs/zerolog"
 )
 

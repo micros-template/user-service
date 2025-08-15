@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"10.1.20.130/dropping/log-management/pkg"
-	ld "10.1.20.130/dropping/log-management/pkg/dto"
+	"github.com/micros-template/log-service/pkg"
+	ld "github.com/micros-template/log-service/pkg/dto"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 )

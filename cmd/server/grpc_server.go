@@ -7,9 +7,10 @@ import (
 	"net"
 	"time"
 
-	"10.1.20.130/dropping/user-service/internal/domain/handler"
-	"10.1.20.130/dropping/user-service/internal/domain/service"
-	"10.1.20.130/dropping/user-service/internal/infrastructure/logger"
+	"github.com/micros-template/user-service/internal/domain/handler"
+	"github.com/micros-template/user-service/internal/domain/service"
+	"github.com/micros-template/user-service/internal/infrastructure/logger"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"go.uber.org/dig"

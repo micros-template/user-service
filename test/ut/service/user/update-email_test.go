@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"10.1.20.130/dropping/user-service/internal/domain/dto"
-	"10.1.20.130/dropping/user-service/internal/domain/service"
-	mk "10.1.20.130/dropping/user-service/test/mocks"
+	"github.com/micros-template/user-service/internal/domain/dto"
+	"github.com/micros-template/user-service/internal/domain/service"
+	mk "github.com/micros-template/user-service/test/mocks"
+
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"
