@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -e
 mkdir -p ./bin/dist
 
 service_name="user_service"

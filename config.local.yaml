@@ -8,15 +8,15 @@ database:
 
 app:
   name: "dropboks"
-  url: "http://localhost:8082"
+  url: "https://localhost:8444"
   grpc:
     port: 50051
     service:
       file_service: 127.0.0.1:50052
   http:
-    port: 8082
+    port: 8444
   verification_url: "verify-email?"
-  auth_url: "http://localhost:8181"
+  auth_url: "https://localhost:8443"
 
 redis:
   address: "localhost"

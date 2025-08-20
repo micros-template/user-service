@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/micros-template/user-service/internal/domain/handler"
@@ -59,13 +60,26 @@ func (s *HTTPServer) Run(ctx context.Context) {
 				ReadHeaderTimeout: 5 * time.Second,
 			}
 			go func() {
-				if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					go func() {
-						if err := logEmitter.EmitLog("ERR", fmt.Sprintf("failed to listen ans serve http server:%v", err)); err != nil {
-							logger.Error().Err(err).Msg("failed to emit log")
-						}
-					}()
-					logger.Fatal().Err(err).Msg("Failed to listen and serve http server")
+				e := os.Getenv("ENV")
+				switch e {
+				case "test":
+					if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+						go func() {
+							if err := logEmitter.EmitLog("ERR", fmt.Sprintf("failed to listen ans serve http server:%v", err)); err != nil {
+								logger.Error().Err(err).Msg("failed to emit log")
+							}
+						}()
+						logger.Fatal().Err(err).Msg("Failed to listen and serve http server")
+					}
+				default:
+					if err := srv.ListenAndServeTLS("./config/cert/server.crt", "./config/cert/server.key"); err != nil && err != http.ErrServerClosed {
+						go func() {
+							if err := logEmitter.EmitLog("ERR", fmt.Sprintf("failed to listen ans serve http server:%v", err)); err != nil {
+								logger.Error().Err(err).Msg("failed to emit log")
+							}
+						}()
+						logger.Fatal().Err(err).Msg("Failed to listen and serve http server")
+					}
 				}
 			}()
 
