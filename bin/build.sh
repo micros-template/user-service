@@ -21,7 +21,7 @@ echo "Building Docker image for $service_name:$VERSION" >/dev/stderr
 docker build -t "$service_name:$VERSION" --build-arg BIN_NAME=$service_name -f Dockerfile .
 
 registry_image="$CI_REGISTRY_IMAGE:$VERSION"
-echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
+echo "${HARBOR_ROBOT_PASSWORD}" | docker login https://docker-registry.anandadf.my.id -u "${HARBOR_ROBOT_USERNAME}" --password-stdin
 
 echo "Tagging image as $registry_image" >/dev/stderr
 docker tag "$service_name:$VERSION" "$registry_image"
